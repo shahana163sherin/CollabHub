@@ -1,0 +1,14 @@
+# Build directories
+bin/
+obj/
+.vs/
+
+# User-specific files
+*.user
+*.suo
+*.db
+*.log
+*.DS_Store
+
+# Environment files
+appsettings.*.json
