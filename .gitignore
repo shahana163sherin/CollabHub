@@ -1,14 +1,14 @@
-# Build directories
+# Build output
 bin/
 obj/
 .vs/
-
+ECHO is on.
 # User-specific files
 *.user
 *.suo
 *.db
 *.log
 *.DS_Store
-
+ECHO is on.
 # Environment files
 appsettings.*.json
