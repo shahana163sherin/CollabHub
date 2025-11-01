@@ -18,5 +18,9 @@ namespace CollabHub.Domain.Entities
         public string InviteLink { get; set; }
         [Required]
         public int MemberLimit { get; set; }
+        
+        public ICollection<TeamMember> Members { get; set; } = new List<TeamMember>();
+        public ICollection<TaskHead> TaskHeads { get; set; } = new List<TaskHead>();
+
     }
 }

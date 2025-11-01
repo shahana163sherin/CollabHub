@@ -4,6 +4,7 @@ using CollabHub.Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CollabHub.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251031055318_CreateTeamMembers")]
+    partial class CreateTeamMembers
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -30,12 +33,33 @@ namespace CollabHub.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("LoginId"));
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedOn")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
 
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
                     b.Property<bool>("IsLoggedin")
                         .HasColumnType("bit");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedOn")
+                        .HasColumnType("datetime2");
 
                     b.Property<string>("PasswordHash")
                         .IsRequired()
@@ -62,10 +86,31 @@ namespace CollabHub.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("RegisterAuditId"));
 
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedOn")
+                        .HasColumnType("datetime2");
+
                     b.Property<string>("Email")
                         .IsRequired()
                         .HasMaxLength(150)
                         .HasColumnType("nvarchar(150)");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedOn")
+                        .HasColumnType("datetime2");
 
                     b.Property<DateTime>("RegisteredOn")
                         .HasColumnType("datetime2");
@@ -84,70 +129,6 @@ namespace CollabHub.Infrastructure.Migrations
                     b.ToTable("RegisterAudits");
                 });
 
-            modelBuilder.Entity("CollabHub.Domain.Entities.TaskHead", b =>
-                {
-                    b.Property<int>("TaskHeadId")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("int");
-
-                    SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TaskHeadId"));
-
-                    b.Property<int?>("CreatedBy")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime>("CreatedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int?>("DeletedBy")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("DeletedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("DueDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("ExpectedEndDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime?>("ExtendedTo")
-                        .HasColumnType("datetime2");
-
-                    b.Property<bool>("IsDeleted")
-                        .HasColumnType("bit");
-
-                    b.Property<int?>("ModifiedBy")
-                        .HasColumnType("int");
-
-                    b.Property<DateTime?>("ModifiedOn")
-                        .HasColumnType("datetime2");
-
-                    b.Property<DateTime>("StartDate")
-                        .HasColumnType("datetime2");
-
-                    b.Property<int>("Status")
-                        .HasColumnType("int");
-
-                    b.Property<int>("TeamId")
-                        .HasColumnType("int");
-
-                    b.Property<string>("Title")
-                        .IsRequired()
-                        .HasColumnType("nvarchar(max)");
-
-                    b.HasKey("TaskHeadId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("DeletedBy");
-
-                    b.HasIndex("ModifiedBy");
-
-                    b.HasIndex("TeamId");
-
-                    b.ToTable("TaskHeads");
-                });
-
             modelBuilder.Entity("CollabHub.Domain.Entities.Team", b =>
                 {
                     b.Property<int>("TeamId")
@@ -156,14 +137,14 @@ namespace CollabHub.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamId"));
 
-                    b.Property<int?>("CreatedBy")
-                        .HasColumnType("int");
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("DeletedBy")
-                        .HasColumnType("int");
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("DeletedOn")
                         .HasColumnType("datetime2");
@@ -184,8 +165,8 @@ namespace CollabHub.Infrastructure.Migrations
                     b.Property<int>("MemberLimit")
                         .HasColumnType("int");
 
-                    b.Property<int?>("ModifiedBy")
-                        .HasColumnType("int");
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ModifiedOn")
                         .HasColumnType("datetime2");
@@ -195,12 +176,6 @@ namespace CollabHub.Infrastructure.Migrations
                         .HasColumnType("nvarchar(450)");
 
                     b.HasKey("TeamId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("DeletedBy");
-
-                    b.HasIndex("ModifiedBy");
 
                     b.HasIndex("TeamName")
                         .IsUnique();
@@ -215,6 +190,27 @@ namespace CollabHub.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("TeamMemberId"));
+
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime>("CreatedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("DeletedOn")
+                        .HasColumnType("datetime2");
+
+                    b.Property<bool>("IsDeleted")
+                        .HasColumnType("bit");
+
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTime?>("ModifiedOn")
+                        .HasColumnType("datetime2");
 
                     b.Property<int>("Role")
                         .HasColumnType("int");
@@ -242,14 +238,14 @@ namespace CollabHub.Infrastructure.Migrations
 
                     SqlServerPropertyBuilderExtensions.UseIdentityColumn(b.Property<int>("UserId"));
 
-                    b.Property<int?>("CreatedBy")
-                        .HasColumnType("int");
+                    b.Property<string>("CreatedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime>("CreatedOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("DeletedBy")
-                        .HasColumnType("int");
+                    b.Property<string>("DeletedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("DeletedOn")
                         .HasColumnType("datetime2");
@@ -270,8 +266,8 @@ namespace CollabHub.Infrastructure.Migrations
                     b.Property<DateTime?>("LastLoginedAt")
                         .HasColumnType("datetime2");
 
-                    b.Property<int?>("ModifiedBy")
-                        .HasColumnType("int");
+                    b.Property<string>("ModifiedBy")
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<DateTime?>("ModifiedOn")
                         .HasColumnType("datetime2");
@@ -297,12 +293,6 @@ namespace CollabHub.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("UserId");
-
-                    b.HasIndex("CreatedBy");
-
-                    b.HasIndex("DeletedBy");
-
-                    b.HasIndex("ModifiedBy");
 
                     b.HasIndex("TeamId");
 
@@ -331,74 +321,18 @@ namespace CollabHub.Infrastructure.Migrations
                     b.Navigation("User");
                 });
 
-            modelBuilder.Entity("CollabHub.Domain.Entities.TaskHead", b =>
-                {
-                    b.HasOne("CollabHub.Domain.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("CollabHub.Domain.Entities.User", "DeletedByUser")
-                        .WithMany()
-                        .HasForeignKey("DeletedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("CollabHub.Domain.Entities.User", "ModifiedByUser")
-                        .WithMany()
-                        .HasForeignKey("ModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("CollabHub.Domain.Entities.Team", "Team")
-                        .WithMany("TaskHeads")
-                        .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
-                        .IsRequired();
-
-                    b.Navigation("CreatedByUser");
-
-                    b.Navigation("DeletedByUser");
-
-                    b.Navigation("ModifiedByUser");
-
-                    b.Navigation("Team");
-                });
-
-            modelBuilder.Entity("CollabHub.Domain.Entities.Team", b =>
-                {
-                    b.HasOne("CollabHub.Domain.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("CollabHub.Domain.Entities.User", "DeletedByUser")
-                        .WithMany()
-                        .HasForeignKey("DeletedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("CollabHub.Domain.Entities.User", "ModifiedByUser")
-                        .WithMany()
-                        .HasForeignKey("ModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.Navigation("CreatedByUser");
-
-                    b.Navigation("DeletedByUser");
-
-                    b.Navigation("ModifiedByUser");
-                });
-
             modelBuilder.Entity("CollabHub.Domain.Entities.TeamMember", b =>
                 {
                     b.HasOne("CollabHub.Domain.Entities.Team", "Team")
                         .WithMany("Members")
                         .HasForeignKey("TeamId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.HasOne("CollabHub.Domain.Entities.User", "User")
                         .WithMany("TeamMembers")
                         .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.NoAction)
+                        .OnDelete(DeleteBehavior.Cascade)
                         .IsRequired();
 
                     b.Navigation("Team");
@@ -408,30 +342,9 @@ namespace CollabHub.Infrastructure.Migrations
 
             modelBuilder.Entity("CollabHub.Domain.Entities.User", b =>
                 {
-                    b.HasOne("CollabHub.Domain.Entities.User", "CreatedByUser")
-                        .WithMany()
-                        .HasForeignKey("CreatedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("CollabHub.Domain.Entities.User", "DeletedByUser")
-                        .WithMany()
-                        .HasForeignKey("DeletedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
-                    b.HasOne("CollabHub.Domain.Entities.User", "ModifiedByUser")
-                        .WithMany()
-                        .HasForeignKey("ModifiedBy")
-                        .OnDelete(DeleteBehavior.NoAction);
-
                     b.HasOne("CollabHub.Domain.Entities.Team", "Team")
                         .WithMany()
                         .HasForeignKey("TeamId");
-
-                    b.Navigation("CreatedByUser");
-
-                    b.Navigation("DeletedByUser");
-
-                    b.Navigation("ModifiedByUser");
 
                     b.Navigation("Team");
                 });
@@ -439,8 +352,6 @@ namespace CollabHub.Infrastructure.Migrations
             modelBuilder.Entity("CollabHub.Domain.Entities.Team", b =>
                 {
                     b.Navigation("Members");
-
-                    b.Navigation("TaskHeads");
                 });
 
             modelBuilder.Entity("CollabHub.Domain.Entities.User", b =>

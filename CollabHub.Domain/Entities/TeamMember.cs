@@ -1,0 +1,21 @@
+﻿using CollabHub.Domain.Commom;
+using CollabHub.Domain.Enum;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace CollabHub.Domain.Entities
+{
+    public class TeamMember
+    {
+        public int TeamMemberId { get; set; }
+        public int TeamId { get; set; }
+        public int UserId { get; set; }
+        public TeamRole Role { get; set; }
+        public User User { get; set; }
+        public Team Team { get; set; }
+
+    }
+}
