@@ -21,6 +21,7 @@ namespace CollabHub.Domain.Entities
         
         public ICollection<TeamMember> Members { get; set; } = new List<TeamMember>();
         public ICollection<TaskHead> TaskHeads { get; set; } = new List<TaskHead>();
+        public ICollection<ChatMessage> ChatMessages { get; set; } 
 
     }
 }

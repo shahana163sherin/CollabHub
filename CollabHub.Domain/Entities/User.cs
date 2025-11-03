@@ -31,6 +31,22 @@ namespace CollabHub.Domain.Entities
         public RegisterAudit RegisterAudit { get; set; }
         public ICollection<LoginAudit> LoginAudits { get; set; } = new List<LoginAudit>();
         public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
+        public ICollection<TaskDefinition> TasksAssignedTo { get; set; }= new List<TaskDefinition>();
+        public ICollection<TaskDefinition> TasksAssignedBy { get; set; }= new List<TaskDefinition>();
+        public ICollection<FileResource> UploadedFiles { get; set; }= new List<FileResource>();
+        public ICollection<ChatMessage> SentMessages { get; set; }= new List<ChatMessage>();
+        public ICollection<Notification> NotificationsSent { get; set; }= new List<Notification>();
+        public ICollection<Notification> NotificationsReceived { get; set; }= new List<Notification>();
+        public ICollection<AiAction> AiActions { get; set; }= new List<AiAction>();
+        public ICollection<GitRepository> GitRepositories { get; set; }= new List<GitRepository>();
+        public ICollection<GitActivity>GitActivities { get; set; }= new List<GitActivity>();
+        public ICollection<Comment> Comments { get; set; }= new List<Comment>();
+        public ICollection<FeedBack> FeedBacks { get; set; }= new List<FeedBack>();
+        public ICollection<Complaint> ComplaintsFiled { get; set; }= new List<Complaint>();
+        public ICollection<Complaint> ComplaintsHandled { get; set; }= new List<Complaint>();
+        public ICollection<ReportUser> ReportedUsers { get; set; }= new List<ReportUser>();
+        public ICollection<ReportUser> ReportsAgainst { get; set; }= new List<ReportUser>();
+        public ICollection<RefreshToken>RefreshTokens { get; set; }= new List<RefreshToken>();
 
     }
 }

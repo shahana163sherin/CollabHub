@@ -22,8 +22,9 @@ namespace CollabHub.Domain.Entities
         public Enum.TaskStatus Status { get; set; } = Enum.TaskStatus.Pending;
         public DateTime StartDate { get; set; }= DateTime.UtcNow;
         public DateTime DueDate { get; set; }
-        //public DateTime? CompletedAt { get; set; }
         public DateTime? ExtendedTo { get; set; }
+        public ICollection<TaskDefinition> TaskDefinitions { get; set; }=new List<TaskDefinition>();
+        public ICollection<GitRepository> GitRepositories { get; set; }=new List<GitRepository>();
 
 
     }
