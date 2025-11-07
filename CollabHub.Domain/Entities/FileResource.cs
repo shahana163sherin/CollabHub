@@ -19,7 +19,6 @@ namespace CollabHub.Domain.Entities
         public decimal FileSizeInKB { get; set; }
         public FileContextType ContextType { get; set; }
         public int? ReferenceId { get; set; }
-        public int UploadedBy { get; set; }
-        public User UploadedByUser { get; set; }
+        
     }
 }

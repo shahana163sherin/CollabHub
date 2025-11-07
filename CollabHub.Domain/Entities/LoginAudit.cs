@@ -20,7 +20,7 @@ namespace CollabHub.Domain.Entities
         public string Email { get; set; }
         public string PasswordHash { get; set; }
         public UserRole Role { get; set; }
-        public bool IsLoggedin { get; set; }= false;
         public User User { get; set; }
+        public DateTime LoginAt { get; set; } 
     }
 }

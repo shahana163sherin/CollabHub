@@ -1,8 +1,11 @@
 ﻿using CollabHub.Domain.Commom;
 using CollabHub.Domain.Entities;
+using Microsoft.Data.SqlClient;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
@@ -12,14 +15,16 @@ namespace CollabHub.Infrastructure.Persistence.Data
 {
     public  class ApplicationDbContext:DbContext
     {
-        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options)
+        private readonly IConfiguration _config;
+        public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options,IConfiguration config) : base(options)
         {
-
+            _config = config;
         }
+        public IDbConnection CreateConnection()=>new SqlConnection(_config.GetConnectionString("DefaultConnection"));
         public DbSet<User> Users { get; set; }
         public DbSet<Team> Teams { get; set; }
         public DbSet<TeamMember> TeamMembers { get; set; }
-        public DbSet<RegisterAudit> RegisterAudits { get; set; }
+       
         public DbSet<LoginAudit> LoginAudits { get; set; }
         public DbSet<TaskHead> TaskHeads { get; set; }
         public DbSet<TaskDefinition> TaskDefinitions { get; set; }
@@ -34,6 +39,7 @@ namespace CollabHub.Infrastructure.Persistence.Data
         public DbSet<Complaint> Complaints { get; set; }
         public DbSet<ReportUser> ReportUsers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -52,15 +58,7 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 .HasIndex(t => t.TeamName)
                 .IsUnique();
 
-            modelBuilder.Entity<User>()
-                .HasOne(U=>U.RegisterAudit)
-                .WithOne(r=>r.User)
-                .HasForeignKey<RegisterAudit>(r=>r.UserId)
-                .OnDelete(DeleteBehavior.Cascade);
-
-            modelBuilder.Entity<RegisterAudit>()
-                .Property(r => r.Role)
-                .HasConversion<string>();
+            
 
             modelBuilder.Entity<LoginAudit>()
                 .HasOne(l=>l.User)
@@ -113,11 +111,7 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 .Property(td => td.Status)
                 .HasConversion<string>();
 
-            modelBuilder.Entity<FileResource>()
-                .HasOne(f => f.UploadedByUser)
-                .WithMany(u => u.UploadedFiles)
-                .HasForeignKey(f => f.UploadedBy)
-                .OnDelete(DeleteBehavior.NoAction);
+           
 
 
             modelBuilder.Entity<FileResource>()
@@ -217,6 +211,10 @@ namespace CollabHub.Infrastructure.Persistence.Data
                  .HasForeignKey(ga => ga.TaskDefinitionId)
                  .OnDelete(DeleteBehavior.NoAction);
 
+            modelBuilder.Entity<GitActivity>()
+                .Property(ga => ga.Status)
+                .HasConversion<string>();
+
             modelBuilder.Entity<Comment>(entity =>
             {
               
@@ -301,6 +299,12 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 .HasForeignKey(r => r.UserId)
                 .OnDelete(DeleteBehavior.Cascade);
 
+            modelBuilder.Entity<PasswordResetToken>()
+                .HasOne(p => p.User)
+                .WithMany(u => u.PasswordResetTokens)
+                .HasForeignKey(p => p.UserId)
+                .OnDelete(DeleteBehavior.NoAction);
+
             foreach (var entityType in modelBuilder.Model.GetEntityTypes())
             {
                 if (typeof(BaseEntity).IsAssignableFrom(entityType.ClrType))
@@ -336,17 +340,17 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 switch (entry.State)
                 {
                     case EntityState.Added:
-                        entry.Entity.CreatedOn = DateTime.UtcNow;
+                        entry.Entity.CreatedOn = DateTime.Now;
                         entry.Entity.IsDeleted = false;
                         break;
 
                     case EntityState.Modified:
-                        entry.Entity.ModifiedOn = DateTime.UtcNow;
+                        entry.Entity.ModifiedOn = DateTime.Now;
                         break;
 
                     case EntityState.Deleted:
                         entry.Entity.IsDeleted = true;
-                        entry.Entity.DeletedOn = DateTime.UtcNow;
+                        entry.Entity.DeletedOn = DateTime.Now;
                         entry.State = EntityState.Modified;
                         break;
                 }

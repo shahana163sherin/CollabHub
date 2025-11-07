@@ -16,7 +16,7 @@ namespace CollabHub.Domain.Entities
         [Required]
         public string Token { get; set; }
         public string? JwtId { get; set; }
-        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedAt { get; set; } = DateTime.Now;
 
         public DateTime? RevokedAt { get; set; }
         public DateTime ExpiresAt { get; set; }

@@ -10,7 +10,7 @@ namespace CollabHub.Domain.Commom
     public abstract class BaseEntity
     {
         public int? CreatedBy { get; set; }
-        public DateTime CreatedOn { get; set; } = DateTime.UtcNow;
+        public DateTime CreatedOn { get; set; } = DateTime.Now;
         public int? ModifiedBy { get; set; }
         public DateTime? ModifiedOn { get; set; }
         public int? DeletedBy { get; set; }

@@ -1,4 +1,5 @@
 ﻿using CollabHub.Domain.Commom;
+using CollabHub.Domain.Enum;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -24,6 +25,7 @@ namespace CollabHub.Domain.Entities
         public string? CommitMessage { get; set; }
         public string BranchName { get; set; }
         public DateTime CommittedAt { get; set; }
+        public GitActivityStatus? Status { get; set; }
         public bool TriggeredNotification { get; set; } = false;
 
     }

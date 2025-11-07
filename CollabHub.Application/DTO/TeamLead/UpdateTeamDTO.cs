@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CollabHub.Infrastructure.Repositories.Dapper
+namespace CollabHub.Application.DTO.TeamLead
 {
-    internal class ReadRepository
+    internal class UpdateTeamDTO
     {
     }
 }

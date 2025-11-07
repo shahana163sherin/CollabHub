@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CollabHub.Infrastructure.Repositories.EF
+namespace CollabHub.Application.DTO.TeamLead
 {
-    internal interface IGenericRepository
+    internal class TeamMemberDTO
     {
     }
 }

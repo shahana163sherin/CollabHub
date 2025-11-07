@@ -4,9 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CollabHub.Infrastructure.Repositories.Dapper
+namespace CollabHub.Application.Interfaces.TeamLead
 {
-    internal interface IReadRepository
+    internal interface ITeamLeadService
     {
     }
 }

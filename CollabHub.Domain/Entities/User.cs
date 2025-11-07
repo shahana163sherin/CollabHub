@@ -22,13 +22,12 @@ namespace CollabHub.Domain.Entities
         public string Password { get; set; }
         public string? ProfileImg { get; set; }
         public UserRole Role { get; set; }
-        public bool IsActive { get; set; } 
+        public bool IsActive { get; set; } = true;
         public DateTime? LastLoginedAt { get; set; }
         public DateTime? LastEmailNotifiedAt { get; set; }
         public string? Qualification { get; set; }
         public int? TeamId { get; set; }
         public Team Team { get; set; }
-        public RegisterAudit RegisterAudit { get; set; }
         public ICollection<LoginAudit> LoginAudits { get; set; } = new List<LoginAudit>();
         public ICollection<TeamMember> TeamMembers { get; set; } = new List<TeamMember>();
         public ICollection<TaskDefinition> TasksAssignedTo { get; set; }= new List<TaskDefinition>();
@@ -47,6 +46,8 @@ namespace CollabHub.Domain.Entities
         public ICollection<ReportUser> ReportedUsers { get; set; }= new List<ReportUser>();
         public ICollection<ReportUser> ReportsAgainst { get; set; }= new List<ReportUser>();
         public ICollection<RefreshToken>RefreshTokens { get; set; }= new List<RefreshToken>();
+        public ICollection<PasswordResetToken> PasswordResetTokens { get; set; } = new List<PasswordResetToken>();
+
 
     }
 }
