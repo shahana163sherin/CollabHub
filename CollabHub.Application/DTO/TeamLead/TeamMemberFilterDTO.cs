@@ -6,10 +6,7 @@ using System.Threading.Tasks;
 
 namespace CollabHub.Application.DTO.TeamLead
 {
-    public class CreateTeamDTO
+    internal class TeamMemberFilterDTO
     {
-        public string TeamName { get; set; }
-        public string? Description { get; set; }
-        public int MemberLimit { get; set; }
     }
 }

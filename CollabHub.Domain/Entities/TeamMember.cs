@@ -8,12 +8,15 @@ using System.Threading.Tasks;
 
 namespace CollabHub.Domain.Entities
 {
-    public class TeamMember
+    public class TeamMember:BaseEntity
     {
         public int TeamMemberId { get; set; }
         public int TeamId { get; set; }
         public int UserId { get; set; }
         public TeamRole Role { get; set; }
+        public bool IsApproved { get; set; }= false;
+        public bool IsRejected { get; set; }=false;
+
         public User User { get; set; }
         public Team Team { get; set; }
 

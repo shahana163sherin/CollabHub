@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace CollabHub.Application.DTO.TeamLead
 {
-    internal class RemoveMemberDTO
+    public class RemoveMemberDTO
     {
+        public int TeamId { get; set; }
+        public int MemberId { get; set; }
     }
 }

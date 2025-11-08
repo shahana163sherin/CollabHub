@@ -8,10 +8,10 @@ namespace CollabHub.WebAPI.Controllers
     [ApiController]
     [ApiVersion("1.0")]
     [Route("api/v{version:apiVersion}/[controller]/[action]")]
-    public class AuthControlller : ControllerBase
+    public class AuthController : ControllerBase
     {
         private readonly IAuthService _auth;
-        public AuthControlller(IAuthService auth)
+        public AuthController(IAuthService auth)
         {
             _auth = auth;
         }

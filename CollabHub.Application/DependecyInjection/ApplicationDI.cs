@@ -1,4 +1,5 @@
 ﻿using CollabHub.Application.Interfaces.Auth;
+using CollabHub.Application.Mapping;
 using CollabHub.Application.Services;
 using CollabHub.Infrastructure.Repositories.EF;
 using Microsoft.AspNetCore.Identity;
@@ -17,6 +18,10 @@ namespace CollabHub.Application.DependecyInjection
         public static IServiceCollection AddApplicationService(this IServiceCollection services)
         {
             services.AddScoped<IAuthService, AuthService>();
+            services.AddAutoMapper(cfg =>
+            {
+                cfg.AddProfile<MappingProfile>();
+            });
             return services;
         }
     }

@@ -6,7 +6,9 @@ using System.Threading.Tasks;
 
 namespace CollabHub.Application.DTO.TeamLead
 {
-    internal class InviteLinkDTO
+    public class ApproveMemberDTO
     {
+        public int TeamMemberId { get; set; }
+        public bool IsApproved { get; set; }
     }
 }

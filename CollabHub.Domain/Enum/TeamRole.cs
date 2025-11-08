@@ -11,6 +11,7 @@ namespace CollabHub.Domain.Enum
        
         Developer=1,
         Designer=2,
-        Tester=3
+        Tester=3,
+        TeamLeader=4
     }
 }
