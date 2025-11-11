@@ -11,7 +11,7 @@ namespace CollabHub.Infrastructure.Configuration
         public string SecretKey { get; set; }
         public string Issuer { get; set; }
         public string Audience { get; set; }
-        public int AccessTokenExpiresInMinutes { get; set; }
+        public int AccessTokenExpirationMinutes { get; set; }
         public int RefreshTokenExpiresInDays { get; set; }
     }
 }

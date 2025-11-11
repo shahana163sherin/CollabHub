@@ -8,6 +8,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
 
 namespace CollabHub.API
@@ -37,15 +38,17 @@ namespace CollabHub.API
                 {
                     ValidateIssuer = true,
                     ValidIssuer = jwtSettings.Issuer,
-                    ValidateActor = true,
                     ValidAudience = jwtSettings.Audience,
                     ValidateLifetime = true,
                     ValidateIssuerSigningKey = true,
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
+                    RoleClaimType = ClaimTypes.Role
                 };
 
 
             });
+            builder.Services.AddAuthorization();
+
 
             builder.Services.AddInfrastructure();
             builder.Services.AddApplicationService();

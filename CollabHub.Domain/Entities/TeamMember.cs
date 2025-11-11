@@ -13,7 +13,7 @@ namespace CollabHub.Domain.Entities
         public int TeamMemberId { get; set; }
         public int TeamId { get; set; }
         public int UserId { get; set; }
-        public TeamRole Role { get; set; }
+        public TeamRole Role { get; set; } = TeamRole.Developer;
         public bool IsApproved { get; set; }= false;
         public bool IsRejected { get; set; }=false;
 

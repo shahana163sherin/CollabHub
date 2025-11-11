@@ -32,6 +32,7 @@ namespace CollabHub.Infrastructure.Security
         {
             var tokenHandler = new JwtSecurityTokenHandler();
             var key = Encoding.ASCII.GetBytes(_jwt.SecretKey);
+            var now = DateTime.UtcNow;
             var tokenDescriptor = new SecurityTokenDescriptor
             {
                 Subject = new ClaimsIdentity(new[]
@@ -40,7 +41,9 @@ namespace CollabHub.Infrastructure.Security
                     new Claim(ClaimTypes.Email,user.Email),
                     new Claim(ClaimTypes.Role,user.Role.ToString())
                 }),
-                Expires = DateTime.Now.AddMinutes(_jwt.AccessTokenExpiresInMinutes),
+                NotBefore=now,
+                Expires = now.AddMinutes(_jwt.AccessTokenExpirationMinutes),
+                IssuedAt=now,
                 Issuer = _jwt.Issuer,
                 Audience = _jwt.Audience,
                 SigningCredentials = new SigningCredentials(

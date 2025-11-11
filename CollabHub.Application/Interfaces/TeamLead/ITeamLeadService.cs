@@ -17,9 +17,12 @@ namespace CollabHub.Application.Interfaces.TeamLead
 
 
         Task<bool> ApproveMemberAsync(ApproveMemberDTO dto,int TeamLeadid);
-        Task<bool> RejectMemberAsync(int TeamID, int memberId, int TeamLeadid);
-        Task<bool> RemoveMemberAsync(int TeamID, int memberId, int TeamLeadid);
-        Task<IEnumerable<TeamMemberDTO>> GetTeamMembersAsync(int teamId,int teamLeadId);
+        Task<bool> RejectMemberAsync(RejectMemberDTO dto, int TeamLeadid);
+        Task<bool> RemoveMemberAsync(int TeamId, int MemberId, int TeamLeadid);
+        Task<IEnumerable<TeamMemberDTO>> GetTeamMembersAsync(TeamMemberFilterDTO dto,int teamLeadId);
+
+
+
 
 
         

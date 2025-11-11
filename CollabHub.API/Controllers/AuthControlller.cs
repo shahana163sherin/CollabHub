@@ -34,7 +34,7 @@ namespace CollabHub.WebAPI.Controllers
             var result = await _auth.RegisterMemberAsync(dto);
             if (!result.Success)
             {
-                return BadRequest(result);
+                return BadRequest(result.Message);
             }
             return Ok(result);
         }

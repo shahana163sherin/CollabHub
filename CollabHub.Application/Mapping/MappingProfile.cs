@@ -1,6 +1,7 @@
 ﻿using AutoMapper;
 using CollabHub.Application.DTO.Task;
 using CollabHub.Application.DTO.TeamLead;
+using CollabHub.Application.DTO.TeamMember;
 using CollabHub.Domain.Entities;
 using CollabHub.Domain.Enum;
 using System;
@@ -29,7 +30,17 @@ namespace CollabHub.Application.Mapping
             CreateMap<TaskHead, TaskHeadDTO>()
                 .ForMember(dest => dest.TeamName, opt => opt.MapFrom(src => src.Team.TeamName))
                 .ForMember(dest => dest.TaskDefinitions, opt => opt.MapFrom(src => src.TaskDefinitions));
-        
+
+            CreateMap<TeamMember, JoinResponseDTO>()
+                .ForMember(dest => dest.TeamName, opt => opt.MapFrom(src => src.Team.TeamName))
+                .ForMember(dest => dest.TeamId, opt => opt.MapFrom(src => src.TeamId))
+                .ForMember(dest => dest.Role, opt => opt.MapFrom(src => src.Role));
+            CreateMap<JoinRequestDTO, TeamMember>();
+           
+
+
+
+
         }
     }
 }

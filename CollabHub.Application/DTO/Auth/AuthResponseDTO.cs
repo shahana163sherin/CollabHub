@@ -10,7 +10,7 @@ namespace CollabHub.Application.DTO.Auth
     {
         public string AccessToken { get; set; }
         public string RefreshToken { get; set; }
-        public DateTime ExpiresAt { get; set; } = DateTime.Now;
+        public DateTime ExpiresAt { get; set; } = DateTime.UtcNow;
     }
 
 }

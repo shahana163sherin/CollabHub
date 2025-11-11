@@ -21,7 +21,7 @@ namespace CollabHub.Application.DTO.Task
         public TaskStatus Status { get; set; } 
         public DateTime StartDate { get; set; } 
         public DateTime DueDate { get; set; }
-        public DateTime? ExtendedTo { get; set; }
+        public DateTime? ExtendedTo { get; set; } 
         public ICollection<TaskDefinition> TaskDefinitions { get; set; } = new List<TaskDefinition>();
     }
 }

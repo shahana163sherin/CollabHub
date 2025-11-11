@@ -26,7 +26,7 @@ namespace CollabHub.Domain.Entities
         public User AssignedBy { get; set; }
         public DateTime ExpectedEndDate { get; set; }
         public Enum.TaskStatus Status { get; set; } = Enum.TaskStatus.Pending;
-        public DateTime StartDate { get; set; } = DateTime.UtcNow;
+        public DateTime StartDate { get; set; } = DateTime.Now;
         public DateTime DueDate { get; set; }
       
         public DateTime? ExtendedTo { get; set; }

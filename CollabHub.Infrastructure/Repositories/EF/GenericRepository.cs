@@ -31,6 +31,12 @@ namespace CollabHub.Infrastructure.Repositories.EF
 
             return await _dbSet.Where(predicate).ToListAsync();
         }
+        public IQueryable<T> QueryByCondition(Expression<Func<T, bool>> predicate)
+        {
+            if(predicate == null)throw new ArgumentNullException(nameof(predicate));
+
+            return _dbSet.Where(predicate);
+        }
 
         public async Task<T?> GetOneAsync(Expression<Func<T,bool>> predicate)
         {

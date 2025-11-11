@@ -25,18 +25,27 @@ namespace CollabHub.Application.Services
         }
 
         public async Task<ApiResponse<TeamDTO>> CreateTeamAsync(CreateTeamDTO dto, int TeamLeadId) {
-            if (string.IsNullOrEmpty(dto.TeamName))
+            if ((string.IsNullOrEmpty(dto.TeamName)) || (string.IsNullOrEmpty(dto.Description)))
             {
                 return new ApiResponse<TeamDTO>
                 {
                     Success = false,
-                    Message = "Team name is required"
+                    Message = "All field are required"
+                };
+            }
+            if(dto.MemberLimit <= 1)
+            {
+                return new ApiResponse<TeamDTO>
+                {
+                    Success = false,
+                    Message = "Team required atleast two memebers"
                 };
             }
             var inviteToken=Guid.NewGuid().ToString();
             var inviteLink = $"https://collabHub.com/join-team/{inviteToken}";
             var team = _mapper.Map<Team>(dto);
             team.InviteLink = inviteLink;
+
             team.CreatedBy = TeamLeadId;
             team.IsActive = true;
             await _repoTeam.AddAsync(team);
@@ -87,7 +96,7 @@ namespace CollabHub.Application.Services
 
             if(team.CreatedBy != TeamLeadid)
             {
-                throw new UnauthorizedAccessException("You are not authorized to approve members for this team");
+                throw new UnauthorizedAccessException("You are not authorized to get members for this team");
             }
 
             var teamMembers=await _teamMember.GetByConditionAsync(t=>t.TeamId==team.TeamId);
@@ -103,45 +112,90 @@ namespace CollabHub.Application.Services
             return true;
         }
 
-        public async Task<IEnumerable<TeamMemberDTO>>GetTeamMembersAsync(int teamId, int teamLeadId)
+        public async Task<IEnumerable<TeamMemberDTO>> GetTeamMembersAsync(TeamMemberFilterDTO dto, int teamLeadId)
         {
-            throw new NotImplementedException();
-        }
+            var team = await _repoTeam.GetByIdAsync(dto.TeamId);
+            if (team == null) throw new KeyNotFoundException("Team is not found");
 
-        public async Task<bool> RejectMemberAsync(int TeamID, int memberId, int TeamLeadid)
-        {
-            var teamMember = (await _teamMember.GetByConditionAsync(m => m.TeamMemberId == memberId && m.TeamId == TeamID)).FirstOrDefault();
-            if (teamMember == null) throw new Exception("Member Not found");
+            if (team.CreatedBy != teamLeadId) throw new UnauthorizedAccessException("You are not authorized to approve members for this team");
 
-            var team = await _repoTeam.GetByIdAsync(TeamID);
-            if (team == null) throw new Exception("Team not found");
-
-            if(team.CreatedBy != TeamLeadid) throw new UnauthorizedAccessException("You are not authorized to reject members for this team");
-
-            if (teamMember.IsApproved)
-                throw new Exception("Already approved");
-            if (teamMember.IsRejected)
-                throw new Exception("Already rejected");
-
-            teamMember.IsRejected = true;
-            await _teamMember.UpdateAsync(teamMember);
-            await _teamMember.SaveAsync();
-            return true;
-
-
+            var query = _teamMember.QueryByCondition(t => t.TeamId == dto.TeamId && !t.IsDeleted);
+                
 
             
+            if (dto.Role.HasValue)
+            {
+                query = query.Where(q => q.Role == dto.Role.Value);
+            }
+            if (dto.IsApproved.HasValue)
+            {
+                query = query.Where(q => q.IsApproved == dto.IsApproved.Value);
+            }
+            if (dto.IsRejected.HasValue)
+            {
+                query = query.Where(q => q.IsRejected == dto.IsRejected.Value);
+            }
+            if (!string.IsNullOrEmpty(dto.SearchTerm))
+            {
+                query = query.Where(q => q.User.Name.Contains(dto.SearchTerm));
+            }
+
+            var members =  query
+               .Select(m => new TeamMemberDTO
+               {
+                   UserId = m.User.UserId,
+                   UserName = m.User.Name,
+                   ProfileImg = m.User.ProfileImg,
+                   Role = m.Role
+               }).ToList();
+
+            return members;
         }
 
-        public async Task<bool> RemoveMemberAsync(int TeamID, int memberId, int TeamLeadid)
+        public async Task<bool> RejectMemberAsync( RejectMemberDTO dto, int teamLeadId)
         {
-            var member = (await _teamMember.GetByConditionAsync(m => m.TeamMemberId == memberId && m.TeamId == TeamID)).FirstOrDefault();
+            
+            var team = await _repoTeam.GetByIdAsync(dto.teamId);
+            if (team == null)
+                throw new Exception("Team not found");
+
+            
+            if (team.CreatedBy != teamLeadId)
+                throw new UnauthorizedAccessException("You are not authorized to reject members for this team");
+
+            
+            var teamMember = await _teamMember.GetOneAsync(m => m.TeamMemberId == dto.MemberId && m.TeamId == dto.teamId);
+            if (teamMember == null)
+                throw new Exception("Member not found in this team");
+
+            if (teamMember.IsApproved)
+                throw new Exception("This member has already been approved and cannot be rejected");
+
+            if (teamMember.IsRejected)
+                throw new Exception("This member has already been rejected");
+
+           
+            teamMember.IsRejected = true;
+            teamMember.ModifiedOn = DateTime.Now;
+            teamMember.ModifiedBy = teamLeadId;
+
+            await _teamMember.UpdateAsync(teamMember);
+            await _teamMember.SaveAsync();
+
+            return true;
+        }
+
+
+        public async Task<bool> RemoveMemberAsync(int TeamId,int MemberId, int TeamLeadid)
+        {
+            var member = (await _teamMember.GetByConditionAsync(m => m.TeamMemberId == MemberId && m.TeamId == TeamId)).FirstOrDefault();
             if (member == null) throw new Exception("Member is not found");
 
-            var team = await _repoTeam.GetByIdAsync(TeamID);
+            var team = await _repoTeam.GetByIdAsync(TeamId);
             if (team == null) throw new KeyNotFoundException("Team is not found");
 
             if (team.CreatedBy != TeamLeadid) throw new UnauthorizedAccessException("You are not authorized to remove this member ");
+            if(member.IsRejected)throw new Exception("Member already rejected");
 
             if (member.Role == Domain.Enum.TeamRole.TeamLeader) throw new InvalidOperationException("You cannot remove the Team Lead");
             if (member.IsDeleted) throw new InvalidOperationException("Member already removed");
@@ -160,7 +214,22 @@ namespace CollabHub.Application.Services
             if (team == null) throw new KeyNotFoundException("Team is not found");
 
             if (team.CreatedBy != teamLeadId) throw new UnauthorizedAccessException("You are not authorized to update Team ");
-
+            if ((string.IsNullOrEmpty(dto.TeamName)) || (string.IsNullOrEmpty(dto.Description)))
+            {
+                return new ApiResponse<TeamDTO>
+                {
+                    Success = false,
+                    Message = "All field are required"
+                };
+            }
+            if (dto.MemberLimit <= 1)
+            {
+                return new ApiResponse<TeamDTO>
+                {
+                    Success = false,
+                    Message = "Team required atleast two memebers"
+                };
+            }
             _mapper.Map(dto, team);
 
             //team.TeamName = dto.Name;
@@ -169,8 +238,10 @@ namespace CollabHub.Application.Services
             //}
             //team.IsActive = dto.IsActive;
             //team.MemberLimit = dto.MemberLimit;
-            //team.ModifiedBy = teamLeadId;
+            team.ModifiedBy = teamLeadId;
             //team.ModifiedOn = DateTime.Now;
+
+
 
             await _repoTeam.UpdateAsync(team);
             await _repoTeam.SaveAsync();

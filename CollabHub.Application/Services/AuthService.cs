@@ -6,11 +6,13 @@ using CollabHub.Domain.Enum;
 using CollabHub.Infrastructure.Repositories.EF;
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
+using System.Xml.Linq;
 
 namespace CollabHub.Application.Services
 {
@@ -31,14 +33,14 @@ namespace CollabHub.Application.Services
             _refresh = refresh;
         }
 
-        private async Task<ApiResponse<object>> RegisterUserAsync(
-            string name, string email, string password, string? profileimg, UserRole role, string? qualification = null)
+        
+        public async Task<ApiResponse<object>> RegisterMemberAsync(RegisterDTO dto)
         {
-            var existing = await _repo.GetOneAsync(u => u.Email == email);
-            if (string.IsNullOrWhiteSpace(name) ||
-                string.IsNullOrWhiteSpace(email) ||
-                string.IsNullOrWhiteSpace(password))
-                
+            var existing = await _repo.GetOneAsync(u => u.Email == dto.Email);
+            if (string.IsNullOrWhiteSpace(dto.Name) ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Password))
+
             {
                 return new ApiResponse<object>
                 {
@@ -46,7 +48,7 @@ namespace CollabHub.Application.Services
                     Message = "All fields are required."
                 };
             }
-           
+
 
             if (existing != null)
             {
@@ -56,17 +58,65 @@ namespace CollabHub.Application.Services
                     Message = "Email already exist.Please use a different one"
                 };
             }
-            var hashedPassword = _hash.HashPassword(password);
+            var hashedPassword = _hash.HashPassword(dto.Password);
 
 
             var user = new User
             {
-                Name = name,
-                Email = email,
+                Name = dto.Name,
+                Email = dto.Email,
                 Password = hashedPassword,
-                Role = role,
-                ProfileImg = profileimg,
-                Qualification = qualification
+                Role = UserRole.Member,
+                ProfileImg = dto.ProfileImg
+            };
+
+            await _repo.AddAsync(user);
+            await _repo.SaveAsync();
+
+            return new ApiResponse<object>
+            {
+                Success = true,
+                Message = "You’re in! Let’s get started.",
+                Data = new { user.UserId, user.Name, user.Email, user.Role }
+            };
+        }
+
+        public async Task<ApiResponse<object>> RegisterLeaderAsync(RegisterLeaderDTO dto)
+        {
+            var existing = await _repo.GetOneAsync(u => u.Email == dto.Email);
+            if (string.IsNullOrWhiteSpace(dto.Name) ||
+                string.IsNullOrWhiteSpace(dto.Email) ||
+                string.IsNullOrWhiteSpace(dto.Password)||
+                string.IsNullOrWhiteSpace(dto.Qualification))
+
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "All fields are required."
+                };
+            }
+
+
+            if (existing != null)
+            {
+                return new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Email already exist.Please use a different one"
+                };
+            }
+            var hashedPassword = _hash.HashPassword(dto.Password);
+
+
+            var user = new User
+            {
+                Name = dto.Name,
+                Email = dto.Email,
+                Password = hashedPassword,
+                Role = UserRole.TeamLead,
+                ProfileImg = dto.ProfileImg,
+                Qualification = dto.Qualification
             };
 
             await _repo.AddAsync(user);
@@ -78,16 +128,6 @@ namespace CollabHub.Application.Services
                 Message = "You’re in! Let’s get started.",
                 Data = new { user.UserId, user.Name, user.Email, user.Qualification, user.Role }
             };
-        }
-        public async Task<ApiResponse<object>> RegisterMemberAsync(RegisterDTO dto)
-        {
-            return await RegisterUserAsync(dto.Name, dto.Email, dto.Password, dto.ProfileImg, UserRole.Member);
-        }
-
-        public async Task<ApiResponse<object>> RegisterLeaderAsync(RegisterLeaderDTO dto)
-        {
-            return await RegisterUserAsync(
-                dto.Name, dto.Email, dto.Password, dto.ProfileImg, UserRole.TeamLead, dto.Qualification);
         }
 
         public async Task<ApiResponse<AuthResponseDTO>> LoginAsync(LoginDTO login)
@@ -139,7 +179,7 @@ namespace CollabHub.Application.Services
             {
                 Token = refresh,
                 UserId = user.UserId,
-                ExpiresAt = DateTime.Now.AddDays(7)
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
             };
 
             await _refresh.AddAsync(refreshEntity);
@@ -184,7 +224,7 @@ namespace CollabHub.Application.Services
         public async Task<ApiResponse<AuthResponseDTO>> RefreshTokenAsync(string refreshToken)
         {
             var refresh = await _refresh.GetOneAsync(r => r.Token == refreshToken);
-            if(refresh == null || refresh.IsRevoked || refresh.ExpiresAt < DateTime.Now)
+            if(refresh == null || refresh.IsRevoked || refresh.ExpiresAt < DateTime.UtcNow)
             {
                 return new ApiResponse<AuthResponseDTO>
                 {

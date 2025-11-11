@@ -13,6 +13,7 @@ namespace CollabHub.Infrastructure.Repositories.EF
         Task<T> GetByIdAsync(object id);
         Task<T>GetOneAsync(Expression<Func<T, bool>> predicate);
         Task<IEnumerable<T>>GetByConditionAsync(Expression<Func<T, bool>> predicate);
+        IQueryable<T> QueryByCondition(Expression<Func<T, bool>> predicate);
         Task AddAsync(T entity);
         Task <bool>UpdateAsync( T entity);
         Task<bool> DeleteAsync(T entity);
