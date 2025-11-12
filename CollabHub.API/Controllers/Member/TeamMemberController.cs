@@ -6,7 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace CollabHub.WebAPI.Controllers
+namespace CollabHub.WebAPI.Controllers.Member
 {
     [ApiController]
     [Route("api/v{version:apiVersion}/[controller]/[action]")]

@@ -1,4 +1,5 @@
-﻿using CollabHub.Application.Interfaces.Auth;
+﻿using CollabHub.Application.Interfaces;
+using CollabHub.Application.Interfaces.Auth;
 using CollabHub.Application.Interfaces.TeamLead;
 using CollabHub.Application.Interfaces.TeamMember;
 using CollabHub.Application.Mapping;
@@ -22,6 +23,8 @@ namespace CollabHub.Application.DependecyInjection
             services.AddScoped<IAuthService, AuthService>();
             services.AddScoped<ITeamLeadService, TeamLeadService>();
             services.AddScoped<ITeamMemberService, TeamMemberService>();
+            services.AddScoped<ITaskHeadService, TaskHeadService>();
+            services.AddScoped<ITaskDefinition, TaskDefinitionService>();
             services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();

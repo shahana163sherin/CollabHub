@@ -6,7 +6,12 @@ using System.Threading.Tasks;
 
 namespace CollabHub.Application.DTO.TaskDefinition
 {
-    internal class UpdateTaskDefinitionDTO
+    public class UpdateTaskDefinitionDTO
     {
+        public string? Description { get; set; }
+        public DateTime? DueDate { get; set; }
+        public DateTime? ExtendedTo { get; set; }
+        public Domain.Enum.TaskStatus? Status { get; set; }
     }
+
 }

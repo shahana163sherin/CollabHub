@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System.Security.Claims;
 
-namespace CollabHub.WebAPI.Controllers
+namespace CollabHub.WebAPI.Controllers.TeamLead
 {
     [ApiController]
     [ApiVersion("1.0")]

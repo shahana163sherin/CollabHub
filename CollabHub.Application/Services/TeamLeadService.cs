@@ -87,8 +87,8 @@ namespace CollabHub.Application.Services
         public async Task<bool> ApproveMemberAsync(ApproveMemberDTO dto, int TeamLeadid)
         {
             var member = await _teamMember.GetByIdAsync(dto.TeamMemberId);
-            if (member == null)
-                throw new Exception("Team member not found");
+            if (member == null || member.IsDeleted)
+                throw new Exception("Member not found or already deleted");
 
             var team = await _repoTeam.GetByIdAsync(member.TeamId);
             if (team == null)
@@ -105,8 +105,10 @@ namespace CollabHub.Application.Services
             {
                 throw new InvalidOperationException("Member limit reached");
             }
+           
 
             member.IsApproved = true;
+            member.IsRejected = false;
             await _teamMember.UpdateAsync(member);
             await _teamMember.SaveAsync();
             return true;
@@ -176,6 +178,7 @@ namespace CollabHub.Application.Services
 
            
             teamMember.IsRejected = true;
+            teamMember.IsApproved = false;
             teamMember.ModifiedOn = DateTime.Now;
             teamMember.ModifiedBy = teamLeadId;
 

@@ -9,9 +9,9 @@ namespace CollabHub.Application.DTO.Task
     public class UpdateTaskHeadDTO
     {
         public string? Title { get; set; }
-        public string? Description { get; set; }
+        //public string? Description { get; set; }
         public DateTime? ExpectedEndDate { get; set; }
-        public TaskStatus? Status { get; set; }
+        public Domain.Enum.TaskStatus? Status { get; set; }
         public DateTime? StartDate { get; set; }
         public DateTime? Duedate { get; set; }
         public DateTime? ExtendedTo { get; set; }

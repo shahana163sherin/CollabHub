@@ -6,7 +6,13 @@ using System.Threading.Tasks;
 
 namespace CollabHub.Application.DTO.TaskHead
 {
-    internal class TaskHeadFilterDTO
+    public class TaskHeadFilterDTO
     {
+        public int TeamId { get; set; }                    
+        public string? Title { get; set; }                    
+        public TaskStatus? Status { get; set; }              
+        public DateTime? FromDate { get; set; }              
+        public DateTime? ToDate { get; set; }              
+        public string? SortBy { get; set; }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using CollabHub.Application.DTO;
 using CollabHub.Application.DTO.Task;
+using CollabHub.Application.DTO.TaskHead;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,8 +11,9 @@ namespace CollabHub.Application.Interfaces
 {
     public interface ITaskHeadService
     {
-        Task<TaskHeadDTO> CreateTaskAsync(CreateTaskHeadDTO dto, int teamLeadId);
-        Task<TaskHeadDTO> UpdateTaskAsync(UpdateTaskHeadDTO dto, int teamLeadId);
-        Task<bool>DeleteTaskAsync(int teamLeadId);
+        Task<ApiResponse<TaskHeadDTO>> CreateTaskAsync(CreateTaskHeadDTO dto, int teamLeadId);
+        Task<TaskHeadDTO> UpdateTaskAsync(int taskHeadId,UpdateTaskHeadDTO dto, int teamLeadId);
+        Task<bool>DeleteTaskAsync(int teamLeadId, int taskHeadId);
+        Task<IEnumerable<TaskHeadDTO>> GetTaskHeadDetailsAsync(int teamLeadId, int taskHeadId);
     }
 }

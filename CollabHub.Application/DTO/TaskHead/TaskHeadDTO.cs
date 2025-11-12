@@ -1,4 +1,5 @@
-﻿using CollabHub.Domain.Entities;
+﻿using CollabHub.Application.DTO.TaskDefinition;
+using CollabHub.Domain.Entities;
 using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
@@ -11,17 +12,17 @@ namespace CollabHub.Application.DTO.Task
     public class TaskHeadDTO
     {
         public int TaskHeadId { get; set; }
-        
+
         public string Title { get; set; }
         public int TeamId { get; set; }
         public string TeamName { get; set; }
-        public Team Team { get; set; }
-        
+        //public Team Team { get; set; }
+
         public DateTime ExpectedEndDate { get; set; }
-        public TaskStatus Status { get; set; } 
-        public DateTime StartDate { get; set; } 
+        public TaskStatus Status { get; set; }
+        public DateTime StartDate { get; set; }
         public DateTime DueDate { get; set; }
-        public DateTime? ExtendedTo { get; set; } 
-        public ICollection<TaskDefinition> TaskDefinitions { get; set; } = new List<TaskDefinition>();
+        public DateTime? ExtendedTo { get; set; }
+        public ICollection<TaskDefinitionDTO> TaskDefinitions { get; set; } = new List<TaskDefinitionDTO>();
     }
 }

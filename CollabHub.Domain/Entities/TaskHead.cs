@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
 using System.Text;
+using System.Text.Json.Serialization;
 using System.Threading.Tasks;
 
 namespace CollabHub.Domain.Entities
@@ -16,6 +17,7 @@ namespace CollabHub.Domain.Entities
         [Required]
         public string Title { get; set; }
         public int TeamId { get; set; }
+        [JsonIgnore]
         public Team Team { get; set; }
         [Required]
         public DateTime ExpectedEndDate { get; set; }
