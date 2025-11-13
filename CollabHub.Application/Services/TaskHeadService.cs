@@ -18,13 +18,15 @@ namespace CollabHub.Application.Services
     {
         private readonly IGenericRepository<TaskHead> _taskHead;
         private readonly IGenericRepository<Team> _team;
+        private readonly ITaskHeadRepository _taskHeadRepository;
         private readonly IMapper _mapper;
 
-        public TaskHeadService(IGenericRepository<TaskHead> taskHead, IGenericRepository<Team> team, IMapper mapper)
+        public TaskHeadService(IGenericRepository<TaskHead> taskHead, IGenericRepository<Team> team, IMapper mapper, ITaskHeadRepository taskHeadRepository)
         {
             _taskHead = taskHead;
             _team = team;
             _mapper = mapper;
+            _taskHeadRepository = taskHeadRepository;
         }
 
         public async Task<ApiResponse<TaskHeadDTO>> CreateTaskAsync(CreateTaskHeadDTO dto, int teamLeadId)
@@ -87,24 +89,61 @@ namespace CollabHub.Application.Services
             var taskHead = await _taskHead.GetByIdAsync(taskHeadId);
             if (taskHead == null) return false;
 
-            var team = await _team.GetByIdAsync(teamLeadId);
-            if (team.CreatedBy != teamLeadId) return false;
+            var team = await _team.GetByIdAsync(taskHead.TeamId);
+            if (team == null)
+                throw new KeyNotFoundException("Team not found.");
+            if (team.CreatedBy != teamLeadId)
+                throw new UnauthorizedAccessException("You are not authorized to delete this task.");
 
             taskHead.DeletedBy = teamLeadId;
             taskHead.DeletedOn = DateTime.Now;
+            taskHead.IsDeleted = true;
             await _taskHead.DeleteAsync(taskHead);
             await _taskHead.SaveAsync();
             return true;
         }
 
-        public Task<IEnumerable<TaskHeadDTO>> GetTaskHeadByTeamAsync(TaskHeadFilterDTO dto, int teamLeadId)
+        public async Task<TaskHeadDTO> GetTaskHeadByIdAsync(int teamLeadId, int taskHeadId)
         {
-            throw new NotImplementedException();
+            var taskHead = await _taskHeadRepository.GetByIdAsync(taskHeadId);
+            if (taskHead == null) throw new KeyNotFoundException("Task head not found");
+
+            var team = await _team.GetByIdAsync(taskHead.TeamId);
+            if (team == null) throw new KeyNotFoundException("Team not found");
+            if (team.CreatedBy != teamLeadId) throw new UnauthorizedAccessException("You cannot view this taskhead");
+
+            if (taskHead.IsDeleted) throw new InvalidOperationException("TaskHead has been deleted");
+            return _mapper.Map<TaskHeadDTO>(taskHead);
         }
 
-        public Task<IEnumerable<TaskHeadDTO>> GetTaskHeadDetailsAsync(int teamLeadId, int taskHeadId)
+        public async Task<IEnumerable<TaskHeadDTO>> GetAllTaskAsync(TaskHeadFilterDTO dto, int teamLeadId)
         {
-            throw new NotImplementedException();
+            var taskHeads = await _taskHeadRepository.GetTaskHeadsAsync();
+
+            var query = taskHeads
+                .Where(th => th.Team.CreatedBy == teamLeadId && !th.IsDeleted);
+            if (dto.TeamId > 0)
+                query = query.Where(th => th.TeamId == dto.TeamId);
+            if(!string.IsNullOrEmpty(dto.Title))
+                query=query.Where(th => th.Title.ToLower().Contains(dto.Title.ToLower()));
+            if(dto.Status.HasValue)
+                query=query.Where(th => th.Status == dto.Status.Value);
+            if (dto.FromDate.HasValue)
+                query = query.Where(th => th.CreatedOn >= dto.FromDate.Value);
+            if (dto.ToDate.HasValue)
+                query = query.Where(th => th.CreatedOn <= dto.ToDate.Value);
+            if (!string.IsNullOrEmpty(dto.SortBy))
+            {
+                query = dto.SortBy.ToLower() switch
+                {
+                    "newest" => query.OrderByDescending(th => th.CreatedOn),
+                    "oldest" => query.OrderBy(th => th.CreatedOn), 
+                    "title" => query.OrderBy(th => th.Title),
+                    _ => query
+                };
+            }
+
+            return _mapper.Map<IEnumerable<TaskHeadDTO>>(query);
         }
 
         public async Task<TaskHeadDTO> UpdateTaskAsync(int taskHeadId,UpdateTaskHeadDTO dto, int teamLeadId)
@@ -115,7 +154,7 @@ namespace CollabHub.Application.Services
             var team=await _team.GetByIdAsync(taskHead.TeamId);
             if (team == null) throw new KeyNotFoundException("Team not found");
             if (team.CreatedBy != teamLeadId) throw new UnauthorizedAccessException("You are not authorized to update the task");
-
+            if(taskHead.IsDeleted) throw new InvalidOperationException("Cannot update a deleted task.");
             taskHead.ModifiedBy= teamLeadId;
             taskHead.ModifiedOn= DateTime.Now;
             taskHead.Title = dto.Title;

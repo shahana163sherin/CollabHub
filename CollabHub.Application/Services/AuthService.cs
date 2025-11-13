@@ -23,7 +23,8 @@ namespace CollabHub.Application.Services
         private readonly IGenericRepository<User> _repo;
         private readonly IGenericRepository<LoginAudit> _audit;
         private readonly IGenericRepository<RefreshToken> _refresh;
-        public AuthService(IHashPassword hash, ITokenService token, IGenericRepository<User> repo, IGenericRepository<LoginAudit> audit, IGenericRepository<RefreshToken> refresh)
+        private readonly IGenericRepository<PasswordResetToken> _reset;
+        public AuthService(IHashPassword hash, ITokenService token, IGenericRepository<User> repo, IGenericRepository<LoginAudit> audit, IGenericRepository<RefreshToken> refresh, IGenericRepository<PasswordResetToken> reset)
         {
 
             _hash = hash;
@@ -31,6 +32,7 @@ namespace CollabHub.Application.Services
             _repo = repo;
             _audit = audit;
             _refresh = refresh;
+            _reset = reset;
         }
 
         
@@ -278,10 +280,65 @@ namespace CollabHub.Application.Services
                 }
             };
         }
-        //public async Task ForgetPasswordAsync(ForgetPasswordDTO fp)
-        //{
 
-        //}
+        public async Task<ApiResponse<string>> ResetPasswordAsync(ResetPasswordDTO dto)
+        {
+            var user = await _repo.GetOneAsync(u => u.Email == dto.Email);
+            if (user == null) return new ApiResponse<string>
+            {
+                Success = false,
+                Message = "User not found"
+            };
+
+            var tokenEntity = await _reset.GetOneAsync(r => r.UserId == user.UserId && !r.IsUsed);
+            if (tokenEntity == null || tokenEntity.ExpiresAt < DateTime.UtcNow)
+                return new ApiResponse<string> { Success = false, Message = "Invalid or expired token" };
+
+            var isValid = _hash.verifyPassword(tokenEntity.TokenHash, dto.Token);
+
+            if (!isValid) return new ApiResponse<string> { Success = false, Message = "Invalid reset token" };
+
+            user.Password = _hash.HashPassword(dto.NewPassword);
+            await _repo.UpdateAsync(user);
+
+            tokenEntity.IsUsed = true;
+            await _reset.UpdateAsync(tokenEntity);
+
+            await _repo.SaveAsync();
+            await _reset.SaveAsync();
+            return new ApiResponse<string>
+            {
+                Success = true,
+                Message = "Password reset successfully."
+            };
+
+        }
+
+        public async Task<ApiResponse<string>> ForgotPasswordAsync(ForgetPasswordDTO fp)
+        {
+            var user = await _repo.GetOneAsync(u => u.Email == fp.Email);
+            if (user == null) return new ApiResponse<string> { Success = false, Message = "User not found" };
+
+            var rawToken=Guid.NewGuid().ToString("N");
+            var hashedToken = _hash.HashPassword(rawToken);
+            var tokenEntity = new PasswordResetToken
+            {
+                UserId = user.UserId,
+                TokenHash = hashedToken,
+                ExpiresAt = DateTime.UtcNow.AddHours(1)
+            };
+
+            await _reset.AddAsync(tokenEntity);
+            await _reset.SaveAsync();
+
+            return new ApiResponse<string>
+            {
+                Success = true,
+                Data = rawToken
+            };
+        }
+
+
 
     }
 }

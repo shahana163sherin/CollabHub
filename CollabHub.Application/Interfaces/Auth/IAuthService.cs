@@ -15,9 +15,8 @@ namespace CollabHub.Application.Interfaces.Auth
         Task<ApiResponse<AuthResponseDTO>> LoginAsync(LoginDTO login);
         Task<ApiResponse<string>> LogoutAsync(string refreshToken);
         Task<ApiResponse<AuthResponseDTO>> RefreshTokenAsync(string refreshToken);
-
-        //Task ForgetPasswordAsync(ForgetPasswordDTO fp);
-        //Task ResetPasswordAsync(ResetPasswordDTO rsp);
+        Task<ApiResponse<string>> ResetPasswordAsync(ResetPasswordDTO dto);
+        Task<ApiResponse<string>> ForgotPasswordAsync(ForgetPasswordDTO fp);
 
     }
 }

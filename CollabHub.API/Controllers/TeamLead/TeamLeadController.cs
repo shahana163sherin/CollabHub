@@ -47,8 +47,23 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         public async Task<IActionResult> UpdateTeam(UpdateTeamDTO dto)
         {
             var leadid = GetId();
-            var result = await _service.UpdateTeamAsync(dto, leadid);
-            return Ok(result);
+            try {
+                var result = await _service.UpdateTeamAsync(dto, leadid);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch(UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+
         }
 
       [HttpDelete]
@@ -90,7 +105,33 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
             var result = await _service.RemoveMemberAsync(TeamId,MemberId, leadId);
             return Ok(new { Success = result, Message = result ? "Member Removed" : "Failed" });
         }
+        [HttpGet]
+        public async Task<IActionResult> ViewMyTeams()
+        {
+                var teamLeadId = GetId();
+                var result= await _service.ViewMyTeamsAsync(teamLeadId);
+                 return Ok(result);
+             
+        }
+        [HttpGet]
+        public async Task<IActionResult>ViewTeamById(int teamId)
+        {
+            try
+            {
+                var teamLeadId = GetId();
+                var result = await _service.ViewMyOneTeamAsync(teamLeadId, teamId);
+                return Ok(result);
+            }
+            catch(KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
 
+        }
       
     }
 }

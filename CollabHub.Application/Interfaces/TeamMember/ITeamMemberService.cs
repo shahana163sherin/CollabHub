@@ -1,4 +1,6 @@
 ﻿using CollabHub.Application.DTO;
+using CollabHub.Application.DTO.Task;
+using CollabHub.Application.DTO.TaskDefinition;
 using CollabHub.Application.DTO.TeamLead;
 using CollabHub.Application.DTO.TeamMember;
 
@@ -18,14 +20,16 @@ namespace CollabHub.Application.Interfaces.TeamMember
         Task<ApiResponse<JoinResponseDTO>> JoinTeamAsync(JoinRequestDTO dto, int memberId);
         Task<ApiResponse<string>> LeaveTeamAsync(int userId);
 
-        //Task<ApiResponse<IEnumerable<TeamDTO>>> GetMyTeamsAsync(int userId);
-        //Task<ApiResponse<IEnumerable<MemberTaskDTO>>> GetTasksByTeamAsync(int teamId, int memberId);
+        Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int userId);
+        Task<TeamDTO> ViewTeamById(int teamId, int userId);
+        Task<IEnumerable<TaskHeadDTO>> GetTasksByTeamAsync(int teamId, int memberId);
+        Task<IEnumerable<TaskDefinitionDTO>> ViewMyAssignedTask(int memberId);
         //Task<ApiResponse<MemberTaskDTO>> GetTaskDetailAsync(int taskId, int memberId);
 
         //Task<ApiResponse<string>> SubmitCommitAsync(MemberCreateCommitDTO dto, int memberId);
         //Task<ApiResponse<IEnumerable<GitActivityDTO>>> GetMyCommitsAsync(int memberId);
 
-        //Task<ApiResponse<IEnumerable<TeamMemberDTO>>> GetTeamMembersAsync(int teamId);
+        //Task<ApiResponse<IEnumerable<TeamMemberDTO>>> GetTeamMembersAsync(int teamId,int userId);
         //Task<ApiResponse<MemberProgressDTO>> GetMyDashboardSummaryAsync(int memberId);
     }
 }

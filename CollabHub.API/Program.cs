@@ -4,6 +4,7 @@ using CollabHub.Application.DependecyInjection;
 using CollabHub.Infrastructure.Configuration;
 using CollabHub.Infrastructure.DependencyInjection;
 using CollabHub.Infrastructure.Persistence.Data;
+using CollabHub.WebAPI.Middleware;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
@@ -102,7 +103,7 @@ namespace CollabHub.API
                 app.UseSwagger();
                 app.UseSwaggerUI();
             }
-
+            app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseHttpsRedirection();
             app.UseAuthentication();
 

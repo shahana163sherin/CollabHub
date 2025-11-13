@@ -1,4 +1,5 @@
 ﻿using CollabHub.Application.Interfaces.Auth;
+using CollabHub.Infrastructure.Repositories;
 using CollabHub.Infrastructure.Repositories.EF;
 using CollabHub.Infrastructure.Security;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +18,7 @@ namespace CollabHub.Infrastructure.DependencyInjection
             services.AddScoped(typeof(IGenericRepository<>),typeof(GenericRepository<>));
             services.AddScoped<IHashPassword, PasswordHasher>();
             services.AddScoped<ITokenService, TokenService>();
+            services.AddScoped<ITaskHeadRepository, TaskHeadRepository>();
             return services;
         }
     }

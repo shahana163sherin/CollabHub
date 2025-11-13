@@ -42,9 +42,9 @@ namespace CollabHub.Application.Mapping
             CreateMap<TaskDefinition, TaskDefinitionDTO>();
             CreateMap<CreateTaskDefinitionDTO, TaskDefinition>();
             CreateMap<UpdateTaskDefinitionDTO, TaskDefinition>();
-           // CreateMap<User, AssignedMemberDTO>()
-           //.ForMember(dest => dest.MemberId, opt => opt.MapFrom(src => src.UserId))
-           //.ForMember(dest => dest.MemberName, opt => opt.MapFrom(src => src.Name));
+            CreateMap<TaskHead, TaskHeadDTO>()
+              .ForMember(dest => dest.TeamName, opt => opt.MapFrom(src => src.Team.TeamName));
+            
 
 
 

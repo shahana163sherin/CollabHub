@@ -4,6 +4,7 @@ using CollabHub.Application.DTO.TeamLead;
 using CollabHub.Application.Interfaces.TeamLead;
 using CollabHub.Domain.Entities;
 using CollabHub.Infrastructure.Repositories.EF;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -215,6 +216,7 @@ namespace CollabHub.Application.Services
         {
             var team = await _repoTeam.GetByIdAsync(dto.TeamId);
             if (team == null) throw new KeyNotFoundException("Team is not found");
+            if (team.IsDeleted) throw new Exception("The team is already deleted");
 
             if (team.CreatedBy != teamLeadId) throw new UnauthorizedAccessException("You are not authorized to update Team ");
             if ((string.IsNullOrEmpty(dto.TeamName)) || (string.IsNullOrEmpty(dto.Description)))
@@ -235,14 +237,8 @@ namespace CollabHub.Application.Services
             }
             _mapper.Map(dto, team);
 
-            //team.TeamName = dto.Name;
-            //if (!string.IsNullOrEmpty(dto.Description)){ 
-            //team.Description = dto.Description;
-            //}
-            //team.IsActive = dto.IsActive;
-            //team.MemberLimit = dto.MemberLimit;
             team.ModifiedBy = teamLeadId;
-            //team.ModifiedOn = DateTime.Now;
+           
 
 
 
@@ -256,5 +252,29 @@ namespace CollabHub.Application.Services
             };
 
         }
+
+        public async Task<IEnumerable<TeamDTO>>ViewMyTeamsAsync(int teamLeadId)
+        {
+            var teams = _repoTeam.QueryByCondition(t => t.CreatedBy == teamLeadId && t.IsActive && !t.IsDeleted)
+              .Include(t => t.Members.Where(m => m.IsApproved))
+               .ThenInclude(m => m.User);
+            var result = await teams.ToListAsync();
+            return _mapper.Map<IEnumerable<TeamDTO>>(result);
+        }
+
+        
+
+        public async Task<TeamDTO> ViewMyOneTeamAsync(int teamLeadId, int teamId)
+        {
+            var team = _repoTeam.QueryByCondition(t => t.TeamId == teamId && t.CreatedBy == teamLeadId && t.IsActive && !t.IsDeleted)
+                .Include(t => t.Members.Where(m => m.IsApproved))
+                .ThenInclude(m => m.User);
+            var result = await team.FirstOrDefaultAsync();
+            if (result == null) throw new  KeyNotFoundException("Team not found");
+
+            return _mapper.Map<TeamDTO>(result);
+        }
+
+       
     }
 }

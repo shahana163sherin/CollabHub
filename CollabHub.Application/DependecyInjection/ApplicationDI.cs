@@ -25,6 +25,7 @@ namespace CollabHub.Application.DependecyInjection
             services.AddScoped<ITeamMemberService, TeamMemberService>();
             services.AddScoped<ITaskHeadService, TaskHeadService>();
             services.AddScoped<ITaskDefinition, TaskDefinitionService>();
+            services.AddScoped<IProfileService, ProfileService>();
             services.AddAutoMapper(cfg =>
             {
                 cfg.AddProfile<MappingProfile>();

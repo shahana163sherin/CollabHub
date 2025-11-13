@@ -1,12 +1,17 @@
 ﻿using AutoMapper;
 using CollabHub.Application.DTO;
+using CollabHub.Application.DTO.Task;
+using CollabHub.Application.DTO.TaskDefinition;
+using CollabHub.Application.DTO.TeamLead;
 using CollabHub.Application.DTO.TeamMember;
 using CollabHub.Application.Interfaces.TeamMember;
 using CollabHub.Domain.Entities;
 using CollabHub.Infrastructure.Repositories.EF;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security.Cryptography.X509Certificates;
 using System.Text;
 using System.Threading.Tasks;
 
@@ -17,18 +22,24 @@ namespace CollabHub.Application.Services
         private readonly IGenericRepository<Team> _teamRepo;
         private readonly IGenericRepository<User> _userRepo;
         private readonly IGenericRepository<TeamMember> _teamMemberRepo;
+        private readonly IGenericRepository<TaskHead> _task;
+        private readonly IGenericRepository<TaskDefinition> _def;
         private readonly IMapper _mapper;
 
         public TeamMemberService(
             IGenericRepository<Team> teamRepo,
             IGenericRepository<User> userRepo,
             IGenericRepository<TeamMember> teamMemberRepo,
+            IGenericRepository<TaskHead> task,
+            IGenericRepository<TaskDefinition> def,
             IMapper mapper)
         {
             _teamRepo = teamRepo;
             _userRepo = userRepo;
             _teamMemberRepo = teamMemberRepo;
             _mapper = mapper;
+            _task = task;
+            _def = def;
         }
 
         public async Task<ApiResponse<JoinResponseDTO>> JoinTeamAsync(JoinRequestDTO dto, int memberId)
@@ -139,6 +150,69 @@ namespace CollabHub.Application.Services
                 Message = "You have left the team successfully."
             };
 
+
+        }
+        public async Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int userId)
+        {
+            var teams = _teamRepo.QueryByCondition(t => t.Members.Any(m => m.UserId == userId) && t.IsActive && !t.IsDeleted)
+               .Include(t => t.Members.Where(m => m.IsApproved))
+               .ThenInclude(m => m.User);
+
+            var result = await teams.ToListAsync();
+            return _mapper.Map<IEnumerable<TeamDTO>>(result);
+        }
+
+        public async Task <TeamDTO> ViewTeamById(int teamId, int userId)
+        {
+            var team = _teamRepo.QueryByCondition(t => t.TeamId == teamId && t.IsActive && !t.IsDeleted)
+                .Include(t => t.Members.Where(m => m.IsApproved))
+                .ThenInclude(m => m.User);
+            var result = await team.FirstOrDefaultAsync();
+            if (result == null) throw new KeyNotFoundException("Team not found");
+
+            if (!result.Members.Any(m => m.UserId == userId))
+                throw new UnauthorizedAccessException("You are not the member to view this team");
+
+            return _mapper.Map<TeamDTO>(result);
+
+        }
+        public async Task<IEnumerable<TaskHeadDTO>> GetTasksByTeamAsync(int teamId, int memberId)
+        {
+            var team = await _teamRepo.GetByIdAsync(teamId);
+            if (team == null) throw new KeyNotFoundException("Team not found");
+
+            var member = await _teamMemberRepo.GetByIdAsync(memberId);
+            if (member == null || member.TeamId != teamId) throw new UnauthorizedAccessException("Member does not belong to this team");
+             var taskHead=await _task.GetByConditionAsync(th=>th.TeamId == teamId);
+            return taskHead.Select(th => new TaskHeadDTO
+            {
+                TaskHeadId = th.TaskHeadId,
+                Title = th.Title,
+                StartDate = th.StartDate,
+                ExpectedEndDate = th.ExpectedEndDate,
+                DueDate = th.DueDate
+            });
+            
+        }
+
+        public async Task<IEnumerable<TaskDefinitionDTO>> ViewMyAssignedTask(int memberId)
+        {
+            var member = await _teamMemberRepo.GetByIdAsync(memberId);
+            if (member == null) throw new KeyNotFoundException("Member not found");
+
+            var taskDef = await _def.GetByConditionAsync(td => td.AssignedUserId == memberId && !td.IsDeleted);
+            return taskDef.Select(td => new TaskDefinitionDTO
+            {
+                TaskDefinitionId = td.TaskDefinitionId,
+                TaskHeadId = td.TaskHeadId,
+                Description = td.Description,
+                Status = (TaskStatus)td.Status,
+                StartDate = td.StartDate,
+                DueDate = td.DueDate,
+                ExtendedTo = td.ExtendedTo
+
+
+            });
 
         }
     }

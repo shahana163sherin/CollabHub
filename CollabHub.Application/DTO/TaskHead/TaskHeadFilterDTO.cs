@@ -10,7 +10,7 @@ namespace CollabHub.Application.DTO.TaskHead
     {
         public int TeamId { get; set; }                    
         public string? Title { get; set; }                    
-        public TaskStatus? Status { get; set; }              
+        public CollabHub.Domain.Enum.TaskStatus? Status { get; set; }              
         public DateTime? FromDate { get; set; }              
         public DateTime? ToDate { get; set; }              
         public string? SortBy { get; set; }

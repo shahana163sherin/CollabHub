@@ -14,6 +14,8 @@ namespace CollabHub.Application.Interfaces.TeamLead
         Task<ApiResponse<TeamDTO>> CreateTeamAsync(CreateTeamDTO dto, int TeamLeadId);
         Task<ApiResponse<TeamDTO>> UpdateTeamAsync(UpdateTeamDTO dto, int teamLeadId);
         Task<ApiResponse<object>>RemoveTeamAsync(int TeamID, int TeamLeadId);
+        Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int teamLeadId);
+        Task<TeamDTO> ViewMyOneTeamAsync(int teamLeadId, int teamId);
 
 
         Task<bool> ApproveMemberAsync(ApproveMemberDTO dto,int TeamLeadid);

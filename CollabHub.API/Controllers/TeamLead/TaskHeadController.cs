@@ -1,5 +1,6 @@
 ﻿using Asp.Versioning;
 using CollabHub.Application.DTO.Task;
+using CollabHub.Application.DTO.TaskHead;
 using CollabHub.Application.Interfaces;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
@@ -49,15 +50,64 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
             var result = await _service.UpdateTaskAsync(taskHeadId, dto, teamLeadId);
             return Ok(result);
         }
-
         [HttpDelete("{taskHeadId}")]
-
-        public async Task <IActionResult>DeleteTask([FromRoute]int taskHeadId)
+        public async Task<IActionResult> DeleteTask([FromRoute] int taskHeadId)
         {
             var teamLeadId = GetId();
-            var result=await _service.DeleteTaskAsync(teamLeadId, taskHeadId);
-            if (!result) return NotFound($"Task {taskHeadId} not found or unauthorized");
-            return NoContent();
+
+            try
+            {
+                var result = await _service.DeleteTaskAsync(teamLeadId, taskHeadId);
+
+                if (!result)
+                    return NotFound(new { message = $"Task {taskHeadId} not found." });
+
+                return NoContent();
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message); 
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message }); 
+            }
+            catch (Exception ex)
+            {
+              
+                return StatusCode(500, new { message = "An unexpected error occurred.", details = ex.Message });
+            }
         }
+        [HttpGet]
+        public async Task<IActionResult>GetAllTaskHead([FromQuery]TaskHeadFilterDTO dto)
+        {
+            var teamLeadId= GetId();
+            var result = await _service.GetAllTaskAsync(dto, teamLeadId);
+            return Ok(result);
+
+        }
+        [HttpGet("{taskHeadId}")]
+        public async Task<IActionResult> GetTaskById([FromRoute]int taskHeadId)
+        {
+            var teamLeadId = GetId();
+            try
+            {
+                var result = await _service.GetTaskHeadByIdAsync( teamLeadId,taskHeadId);
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(ex.Message);
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid(ex.Message);
+            }
+            catch (InvalidOperationException ex)
+            {
+                return BadRequest(ex.Message);
+            }
+        }
+
     }
 }

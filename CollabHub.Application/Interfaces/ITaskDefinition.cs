@@ -15,6 +15,9 @@ namespace CollabHub.Application.Interfaces
         Task<bool>DeleteTaskDefinitionAsync(int taskDefinitionId,int teamLeadId);
         Task<bool> AssignMemberAsync(int taskId, int teamMemberId, int teamLeadId);
         Task<bool> RemoveMemberAsync(int taskDefinitionId, int memberId, int teamLeadId);
+        Task <TaskDefinitionDTO> GetTaskDefinitionById(int taskDefinitionId,int teamLeadId);
+        Task<IEnumerable<TaskDefinitionDTO>> GetAllTaskDefinition(int taskHeadId, int teamLeadId);
+
 
     }
 }

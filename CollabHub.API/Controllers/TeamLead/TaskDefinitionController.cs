@@ -103,5 +103,53 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
             }
             return NoContent();
         }
+        [HttpGet]
+        public async Task<IActionResult>GetTaskDefinitionById(int taskDefinitionId)
+        {
+            var teamLeadId= GetId();
+            try
+            {
+                var result = await _def.GetTaskDefinitionById(taskDefinitionId, teamLeadId);
+
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+        }
+
+        [HttpGet]
+        public async Task<IActionResult>GetAllTaskDefinition(int taskHeadId)
+        {
+            var teamLead= GetId();
+            try
+            {
+                var result = await _def.GetAllTaskDefinition(taskHeadId, teamLead);
+
+                return Ok(result);
+            }
+            catch (KeyNotFoundException ex)
+            {
+                return NotFound(new { message = ex.Message });
+            }
+            catch (UnauthorizedAccessException ex)
+            {
+                return Forbid();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(500, new { message = ex.Message });
+            }
+
+        }
     }
 }

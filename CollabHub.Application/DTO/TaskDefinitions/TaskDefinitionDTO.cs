@@ -18,7 +18,7 @@ namespace CollabHub.Application.DTO.TaskDefinition
         public TaskStatus Status { get; set; }
 
        
-        public List<AssignedMemberDTO>? AssignedMembers { get; set; }
+        //public List<AssignedMemberDTO>? AssignedMembers { get; set; }
     }
 
 }

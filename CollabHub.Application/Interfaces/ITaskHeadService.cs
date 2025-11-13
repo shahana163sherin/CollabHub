@@ -14,6 +14,7 @@ namespace CollabHub.Application.Interfaces
         Task<ApiResponse<TaskHeadDTO>> CreateTaskAsync(CreateTaskHeadDTO dto, int teamLeadId);
         Task<TaskHeadDTO> UpdateTaskAsync(int taskHeadId,UpdateTaskHeadDTO dto, int teamLeadId);
         Task<bool>DeleteTaskAsync(int teamLeadId, int taskHeadId);
-        Task<IEnumerable<TaskHeadDTO>> GetTaskHeadDetailsAsync(int teamLeadId, int taskHeadId);
+        Task <TaskHeadDTO> GetTaskHeadByIdAsync(int teamLeadId, int taskHeadId);
+        Task<IEnumerable<TaskHeadDTO>>GetAllTaskAsync(TaskHeadFilterDTO dto,int teamLeadId);
     }
 }

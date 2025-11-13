@@ -68,5 +68,18 @@ namespace CollabHub.WebAPI.Controllers
             if(!result.Success)return BadRequest(result);
             return Ok(result);
         }
+        [HttpPost]
+        public async Task<IActionResult>ResetPassword([FromBody]ResetPasswordDTO dto)
+        {
+            var result=await _auth.ResetPasswordAsync(dto);
+            return Ok(result);
+        }
+
+        [HttpPost]
+        public async Task<IActionResult> ForgetPassword([FromBody]ForgetPasswordDTO dto)
+        {
+            var result=await _auth.ForgotPasswordAsync(dto);
+            return Ok(result);
+        }
     }
 }
