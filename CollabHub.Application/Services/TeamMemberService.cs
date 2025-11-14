@@ -154,7 +154,7 @@ namespace CollabHub.Application.Services
         }
         public async Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int userId)
         {
-            var teams = _teamRepo.QueryByCondition(t => t.Members.Any(m => m.UserId == userId) && t.IsActive && !t.IsDeleted)
+            var teams = _teamRepo.QueryByCondition(t => t.Members.Any(m => m.UserId == userId && m.IsApproved) && t.IsActive && !t.IsDeleted )
                .Include(t => t.Members.Where(m => m.IsApproved))
                .ThenInclude(m => m.User);
 
@@ -176,12 +176,14 @@ namespace CollabHub.Application.Services
             return _mapper.Map<TeamDTO>(result);
 
         }
-        public async Task<IEnumerable<TaskHeadDTO>> GetTasksByTeamAsync(int teamId, int memberId)
+        public async Task<IEnumerable<TaskHeadDTO>> GetTasksByTeamAsync(int teamId, int userId)
         {
             var team = await _teamRepo.GetByIdAsync(teamId);
             if (team == null) throw new KeyNotFoundException("Team not found");
 
-            var member = await _teamMemberRepo.GetByIdAsync(memberId);
+            var member = await _teamMemberRepo
+        .QueryByCondition(m => m.UserId == userId && m.TeamId == teamId && m.IsApproved)
+        .FirstOrDefaultAsync();
             if (member == null || member.TeamId != teamId) throw new UnauthorizedAccessException("Member does not belong to this team");
              var taskHead=await _task.GetByConditionAsync(th=>th.TeamId == teamId);
             return taskHead.Select(th => new TaskHeadDTO
@@ -195,12 +197,14 @@ namespace CollabHub.Application.Services
             
         }
 
-        public async Task<IEnumerable<TaskDefinitionDTO>> ViewMyAssignedTask(int memberId)
+        public async Task<IEnumerable<TaskDefinitionDTO>> ViewMyAssignedTask(int userId)
         {
-            var member = await _teamMemberRepo.GetByIdAsync(memberId);
+            var member = await _teamMemberRepo
+                .QueryByCondition(m => m.UserId == userId && m.IsApproved)
+                .FirstOrDefaultAsync();
             if (member == null) throw new KeyNotFoundException("Member not found");
 
-            var taskDef = await _def.GetByConditionAsync(td => td.AssignedUserId == memberId && !td.IsDeleted);
+            var taskDef = await _def.GetByConditionAsync(td => td.AssignedMemberId == member.TeamMemberId && !td.IsDeleted);
             return taskDef.Select(td => new TaskDefinitionDTO
             {
                 TaskDefinitionId = td.TaskDefinitionId,

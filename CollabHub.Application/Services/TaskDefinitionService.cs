@@ -69,15 +69,15 @@ namespace CollabHub.Application.Services
             var team = await _teamRepo.GetByIdAsync(member.TeamId);
             if (team.CreatedBy != teamLeadId)
                 throw new UnauthorizedAccessException("You are not authorized to assign members to this team");
-
-            if (task.AssignedUserId.HasValue && task.AssignedUserId != member.UserId)
+            //userId
+            if (task.AssignedMemberId.HasValue && task.AssignedMemberId != member.TeamMemberId)
                 throw new InvalidOperationException("Task is already assigned to another member");
-            if (task.AssignedUserId == null && task.ModifiedBy == teamLeadId)
+            if ( task.ModifiedBy == teamLeadId)
                 throw new InvalidOperationException("This member was recently removed by you. Cannot reassign immediately.");
 
 
             task.AssignedById = teamLeadId;
-            task.AssignedUserId = member.UserId;
+            task.AssignedMemberId = member.TeamMemberId;
             task.StartDate = DateTime.Now;
 
             await _defRepo.UpdateAsync(task);
@@ -130,6 +130,9 @@ namespace CollabHub.Application.Services
 
             if (team.CreatedBy != teamLeadId)
                 throw new UnauthorizedAccessException("You are not authorized to delete this task definition.");
+            if (task.AssignedMemberId.HasValue)
+                throw new InvalidOperationException("Cannot delete a task that is assigned to a member");
+
 
             await _defRepo.DeleteAsync(task);
             await _defRepo.SaveAsync();
@@ -143,7 +146,7 @@ namespace CollabHub.Application.Services
             if (task == null)
                 return false;
 
-            if (task.AssignedUserId != memberId )
+            if (task.AssignedMemberId != memberId )
                 return false;
                 
 
@@ -159,7 +162,7 @@ namespace CollabHub.Application.Services
                 throw new UnauthorizedAccessException("You are not authorized to remove this member");
 
            
-            task.AssignedUserId = null;
+            task.AssignedMemberId = null;
             task.AssignedById = null;
             task.ModifiedBy = teamLeadId;
             task.ModifiedOn = DateTime.Now;

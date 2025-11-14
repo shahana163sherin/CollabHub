@@ -67,11 +67,11 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
             return Ok(new { message = "Task updated successfully" });
         }
 
-        [HttpDelete("{taskDefiitionId}")]
-        public async Task<IActionResult>DeleteTask([FromRoute]int taskDefiitionId)
+        [HttpDelete("{taskDefinitionId}")]
+        public async Task<IActionResult>DeleteTask([FromRoute]int taskDefinitionId)
         {
             var teamleadId = GetId();
-            var response = await _def.DeleteTaskDefinitionAsync(taskDefiitionId, teamleadId);
+            var response = await _def.DeleteTaskDefinitionAsync(taskDefinitionId, teamleadId);
             if (!response)
             {
                 return NotFound(new { message = "You are not authorized to delete or task not found" });
@@ -80,7 +80,7 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         }
 
         [HttpPut("{taskId}/{memberId}")]
-        public async Task<IActionResult> AssignTask([FromRoute]int memberId, [FromRoute] int taskId)
+        public async Task<IActionResult> AssignTask([FromRoute]int taskId, [FromRoute] int memberId)
         {
             var teamLeadId = GetId();
             var result = await _def.AssignMemberAsync(taskId, memberId, teamLeadId);

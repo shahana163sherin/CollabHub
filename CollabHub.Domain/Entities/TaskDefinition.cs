@@ -18,9 +18,13 @@ namespace CollabHub.Domain.Entities
         public TaskHead TaskHead { get; set; }
         [Required]
         public string Description { get; set; }
-        [ForeignKey("AssignedUser")]
-        public int? AssignedUserId { get; set; }
-        public User AssignedUser { get; set; }
+        //[ForeignKey("AssignedUser")]
+        //public int? AssignedUserId { get; set; }
+        //public User AssignedUser { get; set; }
+        [ForeignKey("AssignedMember")]
+        public int? AssignedMemberId { get; set; }
+        public TeamMember AssignedMember { get; set; }
+
         [ForeignKey("AssignedBy")]
         public int? AssignedById { get; set; }
         public User AssignedBy { get; set; }

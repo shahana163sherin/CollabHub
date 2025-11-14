@@ -95,10 +95,16 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 .HasForeignKey(td => td.TaskHeadId)
                 .OnDelete(DeleteBehavior.NoAction);
 
+            //modelBuilder.Entity<TaskDefinition>()
+            //    .HasOne(td=>td.AssignedUser)
+            //    .WithMany(u=>u.TasksAssignedTo)
+            //    .HasForeignKey(td=>td.AssignedUserId)
+            //    .OnDelete(DeleteBehavior.NoAction);
+
             modelBuilder.Entity<TaskDefinition>()
-                .HasOne(td=>td.AssignedUser)
-                .WithMany(u=>u.TasksAssignedTo)
-                .HasForeignKey(td=>td.AssignedUserId)
+                .HasOne(td => td.AssignedMember)
+                .WithMany(tm => tm.TasksAssignedTo)
+                .HasForeignKey(td => td.AssignedMemberId)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<TaskDefinition>()

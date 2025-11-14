@@ -1,4 +1,6 @@
-﻿using System.Net;
+﻿using Microsoft.AspNetCore.Authentication;
+using Microsoft.AspNetCore.Authentication.JwtBearer;
+using System.Net;
 using System.Text.Json;
 
 namespace CollabHub.WebAPI.Middleware
@@ -40,8 +42,9 @@ namespace CollabHub.WebAPI.Middleware
                 };
 
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response));
+
             }
-        
+
         }
     }
 }

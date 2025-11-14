@@ -20,7 +20,10 @@ namespace CollabHub.Application.Mapping
 
             CreateMap<CreateTeamDTO, Team>();
             CreateMap<UpdateTeamDTO, Team>();
-            CreateMap<Team, TeamDTO>();
+            //CreateMap<Team, TeamDTO>();
+            CreateMap<Team, TeamDTO>()
+    .ForMember(dest => dest.Members, opt => opt.MapFrom(src => src.Members.Where(m => m.IsApproved && !m.IsDeleted)));
+
             CreateMap<TeamMember, TeamMemberDTO>()
                 .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.Name))
                 .ForMember(dest => dest.ProfileImg, opt => opt.MapFrom(src => src.User.ProfileImg));
