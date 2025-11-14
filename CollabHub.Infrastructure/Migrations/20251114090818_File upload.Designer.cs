@@ -4,6 +4,7 @@ using CollabHub.Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CollabHub.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251114090818_File upload")]
+    partial class Fileupload
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -366,9 +369,6 @@ namespace CollabHub.Infrastructure.Migrations
                     b.Property<DateTime?>("DeletedOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("FileData")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("FileExtension")
                         .IsRequired()
                         .HasColumnType("nvarchar(max)");
@@ -383,9 +383,6 @@ namespace CollabHub.Infrastructure.Migrations
                     b.Property<decimal>("FileSizeInKB")
                         .HasPrecision(18, 2)
                         .HasColumnType("decimal(18,2)");
-
-                    b.Property<bool>("IsActive")
-                        .HasColumnType("bit");
 
                     b.Property<bool>("IsDeleted")
                         .HasColumnType("bit");
@@ -1125,6 +1122,9 @@ namespace CollabHub.Infrastructure.Migrations
 
                     b.Property<string>("Password")
                         .IsRequired()
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<string>("ProfileImg")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("Qualification")

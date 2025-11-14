@@ -2,9 +2,13 @@
 using CollabHub.Application.Interfaces;
 using CollabHub.Application.Interfaces.Auth;
 using CollabHub.Domain.Entities;
+using CollabHub.Domain.Enum;
 using CollabHub.Infrastructure.Repositories.EF;
+using Microsoft.AspNetCore.Http;
+using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
 using System;
+using System.Buffers.Text;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -16,69 +20,129 @@ namespace CollabHub.Application.Services
     {
         private readonly IGenericRepository<User> _repo;
         private readonly IHashPassword _hash;
+        private readonly IGenericRepository<FileResource> _file;
 
-        public ProfileService(IGenericRepository<User> repo, IHashPassword hash)
+        public ProfileService(IGenericRepository<User> repo, IHashPassword hash, IGenericRepository<FileResource> file)
         {
             _repo = repo;
             _hash = hash;
+            _file = file;
         }
 
-        public async Task<ApiResponse<object>> GetProfileAsync(int userId)
+        
+        private async Task<FileResource> ProcessFileAsync(IFormFile file, FileContextType contextType, int referenceId, FileResource? existingFile = null)
         {
-            var user = await _repo.GetByIdAsync(userId);
-            if (user == null)
-                return new ApiResponse<object> { Success = false, Message = "User not found" };
+            if (file == null) return null;
 
-            var profile = new
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            var fileBytes = ms.ToArray();
+            var base64 = Convert.ToBase64String(fileBytes);
+
+            if (existingFile != null)
             {
-                user.UserId,
-                user.Name,
-                user.Email,
-                user.ProfileImg,
-                Qualification = user.Role == Domain.Enum.UserRole.TeamLead ? user.Qualification : null
+                existingFile.FileName = file.FileName;
+                existingFile.FileExtension = Path.GetExtension(file.FileName);
+                existingFile.FileSizeInKB = Math.Round((decimal)fileBytes.Length / 1024, 2);
+                existingFile.FileData = base64;
+                existingFile.ModifiedOn = DateTime.Now;
+                existingFile.ModifiedBy = referenceId;
+                await _file.UpdateAsync(existingFile);
+                await _file.SaveAsync();
+                return existingFile;
+            }
 
+            var newFile = new FileResource
+            {
+                FileName = file.FileName,
+                FileExtension = Path.GetExtension(file.FileName),
+                FileSizeInKB = Math.Round((decimal)fileBytes.Length / 1024, 2),
+                FilePath = null,
+                ContextType = contextType,
+                ReferenceId = referenceId,
+                FileData = base64,
+                IsActive = true
             };
 
-            return new ApiResponse<object>
-            {
-                Success = true,
-                Message = "Profile fetched successfully",
-                Data = profile
-            };
+            await _file.AddAsync(newFile);
+            await _file.SaveAsync();
+            return newFile;
         }
-
         public async Task<ApiResponse<string>> UpdateProfileAsync(int userId, UpdateProfileDTO dto)
         {
-            var user = await _repo.GetByIdAsync(userId);
-            if (user == null) return new ApiResponse<string> { Success = false, Message = "User not found" };
+           
+            var user = _repo.QueryByCondition(u => u.UserId == userId)
+                            .Include(u => u.UploadedFiles)
+                            .FirstOrDefault();
 
-            if (string.IsNullOrEmpty(dto.Name)) return new ApiResponse<string>
-            {
-                Success = false,
-                Message = "Name cannot be empty"
-            };
+            if (user == null)
+                return new ApiResponse<string> { Success = false, Message = "User not found" };
+
+            if (string.IsNullOrEmpty(dto.Name))
+                return new ApiResponse<string> { Success = false, Message = "Name cannot be empty" };
 
             user.Name = dto.Name;
-            user.ProfileImg = dto.ProfileImage ?? user.ProfileImg;
 
-            if (user.Role == Domain.Enum.UserRole.TeamLead) user.Qualification = dto.Qualification ?? user.Qualification;
+            
+            var existingProfileImage = user.UploadedFiles
+                .Where(f => f.ContextType == FileContextType.ProfileImage && f.IsActive)
+                .OrderByDescending(f => f.CreatedOn)
+                .FirstOrDefault();
+
+            if (dto.ProfileImage != null)
+            {
+           
+                var fileResource = await ProcessFileAsync(dto.ProfileImage, FileContextType.ProfileImage, user.UserId, existingProfileImage);
+
+                if (existingProfileImage == null && fileResource != null)
+                    user.UploadedFiles.Add(fileResource);
+            }
+
+            if (user.Role == Domain.Enum.UserRole.TeamLead)
+                user.Qualification = dto.Qualification ?? user.Qualification;
+
             user.ModifiedBy = user.UserId;
             user.ModifiedOn = DateTime.Now;
 
             await _repo.UpdateAsync(user);
             await _repo.SaveAsync();
 
-            return new ApiResponse<string>
+            return new ApiResponse<string> { Success = true, Message = "Profile updated successfully" };
+        }
+        public async Task<ApiResponse<object>> GetProfileAsync(int userId)
+        {
+           
+            var user = _repo.QueryByCondition(u => u.UserId == userId)
+                            .Include(u => u.UploadedFiles)
+                            .FirstOrDefault();
+
+            if (user == null)
+                return new ApiResponse<object> { Success = false, Message = "User not found" };
+
+        
+            var profileImageBase64 = user.UploadedFiles
+                .Where(f => f.ContextType == FileContextType.ProfileImage && f.IsActive)
+                .OrderByDescending(f => f.CreatedOn)
+                .Select(f => f.FileData)
+                .FirstOrDefault();
+
+            var profile = new
             {
-                Success = true,
-                Message = "Profile updated Successfully"
-              
+                user.UserId,
+                user.Name,
+                user.Email,
+                ProfileImage = profileImageBase64,
+                Qualification = user.Role == Domain.Enum.UserRole.TeamLead ? user.Qualification : null
             };
+
+            return new ApiResponse<object> { Success = true, Message = "Profile fetched successfully", Data = profile };
         }
 
-       public async Task<ApiResponse<string>> ChangePasswordAsync(int userId, ChangePasswordDTO dto)
+        public async Task<ApiResponse<string>> ChangePasswordAsync(int userId, ChangePasswordDTO dto)
         {
-            var user = await _repo.GetByIdAsync(userId);
+            var user = _repo.QueryByCondition(u => u.UserId == userId)
+                    .Include(u => u.UploadedFiles)
+                    .FirstOrDefault();
             if (user == null) return new ApiResponse<string> { Success = false, Message = "User not found" };
 
             bool validCurrent = _hash.verifyPassword(user.Password, dto.CurrentPassword);

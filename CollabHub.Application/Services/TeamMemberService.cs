@@ -6,6 +6,7 @@ using CollabHub.Application.DTO.TeamLead;
 using CollabHub.Application.DTO.TeamMember;
 using CollabHub.Application.Interfaces.TeamMember;
 using CollabHub.Domain.Entities;
+using CollabHub.Domain.Enum;
 using CollabHub.Infrastructure.Repositories.EF;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -152,30 +153,72 @@ namespace CollabHub.Application.Services
 
 
         }
+       
+
         public async Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int userId)
         {
-            var teams = _teamRepo.QueryByCondition(t => t.Members.Any(m => m.UserId == userId && m.IsApproved) && t.IsActive && !t.IsDeleted )
-               .Include(t => t.Members.Where(m => m.IsApproved))
-               .ThenInclude(m => m.User);
+            var teams = await _teamRepo.QueryByCondition(t =>
+                t.Members.Any(m => m.UserId == userId && m.IsApproved) &&
+                t.IsActive && !t.IsDeleted)
+                .Include(t => t.Members)
+                    .ThenInclude(m => m.User)
+                        .ThenInclude(u => u.UploadedFiles)
+                .ToListAsync();
 
-            var result = await teams.ToListAsync();
-            return _mapper.Map<IEnumerable<TeamDTO>>(result);
+            var result = teams.Select(t => new TeamDTO
+            {
+                TeamId = t.TeamId,
+                TeamName = t.TeamName,
+                Members = t.Members
+                    .Where(m => m.IsApproved)
+                    .Select(m => new TeamMemberDTO
+                    {
+                        UserId = m.UserId,
+                        UserName = m.User.Name,
+                        Role = m.Role,
+                        ProfileImg = m.User.UploadedFiles
+                            .Where(f => f.ContextType == FileContextType.ProfileImage && f.IsActive)
+                            .OrderByDescending(f => f.CreatedOn)
+                            .Select(f => f.FileData)
+                            .FirstOrDefault()
+                    }).ToList()
+            });
+
+            return result;
         }
 
-        public async Task <TeamDTO> ViewTeamById(int teamId, int userId)
+        public async Task<TeamDTO> ViewTeamById(int teamId, int userId)
         {
-            var team = _teamRepo.QueryByCondition(t => t.TeamId == teamId && t.IsActive && !t.IsDeleted)
-                .Include(t => t.Members.Where(m => m.IsApproved))
-                .ThenInclude(m => m.User);
-            var result = await team.FirstOrDefaultAsync();
-            if (result == null) throw new KeyNotFoundException("Team not found");
+            var team = await _teamRepo.QueryByCondition(t => t.TeamId == teamId && t.IsActive && !t.IsDeleted)
+                .Include(t => t.Members)
+                    .ThenInclude(m => m.User)
+                        .ThenInclude(u => u.UploadedFiles)
+                .FirstOrDefaultAsync();
 
-            if (!result.Members.Any(m => m.UserId == userId))
-                throw new UnauthorizedAccessException("You are not the member to view this team");
+            if (team == null) throw new KeyNotFoundException("Team not found");
+            if (!team.Members.Any(m => m.UserId == userId && m.IsApproved))
+                throw new UnauthorizedAccessException("You are not authorized to view this team");
 
-            return _mapper.Map<TeamDTO>(result);
-
+            return new TeamDTO
+            {
+                TeamId = team.TeamId,
+                TeamName = team.TeamName,
+                Members = team.Members
+                    .Where(m => m.IsApproved)
+                    .Select(m => new TeamMemberDTO
+                    {
+                        UserId = m.UserId,
+                        UserName = m.User.Name,
+                        Role = m.Role,
+                        ProfileImg = m.User.UploadedFiles
+                            .Where(f => f.ContextType == FileContextType.ProfileImage && f.IsActive)
+                            .OrderByDescending(f => f.CreatedOn)
+                            .Select(f => f.FileData)
+                            .FirstOrDefault()
+                    }).ToList()
+            };
         }
+
         public async Task<IEnumerable<TaskHeadDTO>> GetTasksByTeamAsync(int teamId, int userId)
         {
             var team = await _teamRepo.GetByIdAsync(teamId);
@@ -210,7 +253,7 @@ namespace CollabHub.Application.Services
                 TaskDefinitionId = td.TaskDefinitionId,
                 TaskHeadId = td.TaskHeadId,
                 Description = td.Description,
-                Status = (TaskStatus)td.Status,
+                Status=td.Status,
                 StartDate = td.StartDate,
                 DueDate = td.DueDate,
                 ExtendedTo = td.ExtendedTo

@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
@@ -9,7 +10,7 @@ namespace CollabHub.Application.DTO
     public class UpdateProfileDTO
     {
         public string? Name { get; set; }
-        public string? ProfileImage { get; set; }
+        public IFormFile? ProfileImage { get; set; }
         public string? Qualification {  get; set; }
     }
 }

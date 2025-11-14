@@ -20,7 +20,7 @@ namespace CollabHub.Domain.Entities
         [MinLength(6,ErrorMessage ="Password contain minimum 6 characters")]
         [Required]
         public string Password { get; set; }
-        public string? ProfileImg { get; set; }
+        //public string? ProfileImg { get; set; }
         public UserRole Role { get; set; }
         public bool IsActive { get; set; } = true;
         public DateTime? LastLoginedAt { get; set; }

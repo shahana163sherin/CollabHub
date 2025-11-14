@@ -17,7 +17,7 @@ namespace CollabHub.WebAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> RegisterTeamLead([FromBody] RegisterLeaderDTO dto)
+        public async Task<IActionResult> RegisterTeamLead([FromForm] RegisterLeaderDTO dto)
         {
 
             var result = await _auth.RegisterLeaderAsync(dto);
@@ -29,7 +29,7 @@ namespace CollabHub.WebAPI.Controllers
         }
 
         [HttpPost]
-        public async Task<IActionResult> RegisterMember([FromBody] RegisterDTO dto)
+        public async Task<IActionResult> RegisterMember([FromForm] RegisterDTO dto)
         {
             var result = await _auth.RegisterMemberAsync(dto);
             if (!result.Success)

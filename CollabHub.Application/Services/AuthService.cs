@@ -4,6 +4,7 @@ using CollabHub.Application.Interfaces.Auth;
 using CollabHub.Domain.Entities;
 using CollabHub.Domain.Enum;
 using CollabHub.Infrastructure.Repositories.EF;
+using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -24,7 +25,9 @@ namespace CollabHub.Application.Services
         private readonly IGenericRepository<LoginAudit> _audit;
         private readonly IGenericRepository<RefreshToken> _refresh;
         private readonly IGenericRepository<PasswordResetToken> _reset;
-        public AuthService(IHashPassword hash, ITokenService token, IGenericRepository<User> repo, IGenericRepository<LoginAudit> audit, IGenericRepository<RefreshToken> refresh, IGenericRepository<PasswordResetToken> reset)
+        private readonly IGenericRepository<FileResource> _file;
+        public AuthService(IHashPassword hash, ITokenService token, IGenericRepository<User> repo, IGenericRepository<LoginAudit> audit, IGenericRepository<RefreshToken> refresh,
+            IGenericRepository<PasswordResetToken> reset, IGenericRepository<FileResource> file)
         {
 
             _hash = hash;
@@ -33,9 +36,37 @@ namespace CollabHub.Application.Services
             _audit = audit;
             _refresh = refresh;
             _reset = reset;
+            _file = file;
         }
 
         
+        private async Task<FileResource?> ProcessFileAsync(IFormFile file, FileContextType contextType,int referenceId)
+        {
+            if (file == null) return (null);
+
+            using var ms = new MemoryStream();
+            await file.CopyToAsync(ms);
+            var fileBytes = ms.ToArray();
+            var base64 = Convert.ToBase64String(fileBytes);
+
+            var fileResource = new FileResource
+            {
+                FileName = file.FileName,
+                FileExtension = Path.GetExtension(file.FileName),
+                FileSizeInKB = Math.Round((decimal)fileBytes.Length / 1024, 2),
+                FilePath = null,
+                ContextType = contextType,
+                ReferenceId = referenceId,
+                FileData=base64,
+                IsActive=true
+            };
+
+            await _file.AddAsync(fileResource);
+            await _file.SaveAsync();
+
+            return fileResource;
+        }
+
         public async Task<ApiResponse<object>> RegisterMemberAsync(RegisterDTO dto)
         {
             var existing = await _repo.GetOneAsync(u => u.Email == dto.Email);
@@ -60,6 +91,8 @@ namespace CollabHub.Application.Services
                     Message = "Email already exist.Please use a different one"
                 };
             }
+
+
             var hashedPassword = _hash.HashPassword(dto.Password);
 
 
@@ -69,11 +102,22 @@ namespace CollabHub.Application.Services
                 Email = dto.Email,
                 Password = hashedPassword,
                 Role = UserRole.Member,
-                ProfileImg = dto.ProfileImg
             };
-
             await _repo.AddAsync(user);
             await _repo.SaveAsync();
+
+            var fileResource = await ProcessFileAsync(dto.ProfileImg, FileContextType.ProfileImage,user.UserId);
+
+            if (fileResource != null)
+            {
+                fileResource.ReferenceUser = user; 
+                user.UploadedFiles.Add(fileResource);
+            }
+
+           
+            await _repo.UpdateAsync(user);
+            await _repo.SaveAsync();
+            
 
             return new ApiResponse<object>
             {
@@ -108,6 +152,10 @@ namespace CollabHub.Application.Services
                     Message = "Email already exist.Please use a different one"
                 };
             }
+
+            
+
+
             var hashedPassword = _hash.HashPassword(dto.Password);
 
 
@@ -117,11 +165,23 @@ namespace CollabHub.Application.Services
                 Email = dto.Email,
                 Password = hashedPassword,
                 Role = UserRole.TeamLead,
-                ProfileImg = dto.ProfileImg,
+               
                 Qualification = dto.Qualification
             };
-
             await _repo.AddAsync(user);
+            await _repo.SaveAsync();
+            var  fileResource = await ProcessFileAsync(dto.ProfileImg, FileContextType.ProfileImage,user.UserId);
+
+
+            if (fileResource != null)
+            {
+                fileResource.ReferenceUser = user; 
+                user.UploadedFiles.Add(fileResource);
+            }
+
+           
+
+            await _repo.UpdateAsync(user);
             await _repo.SaveAsync();
 
             return new ApiResponse<object>

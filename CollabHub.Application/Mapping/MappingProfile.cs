@@ -25,8 +25,14 @@ namespace CollabHub.Application.Mapping
     .ForMember(dest => dest.Members, opt => opt.MapFrom(src => src.Members.Where(m => m.IsApproved && !m.IsDeleted)));
 
             CreateMap<TeamMember, TeamMemberDTO>()
-                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.Name))
-                .ForMember(dest => dest.ProfileImg, opt => opt.MapFrom(src => src.User.ProfileImg));
+                .ForMember(dest => dest.UserName, opt => opt.MapFrom(src => src.User.Name));
+                //.ForMember(dest => dest.ProfileImg, opt => opt.MapFrom(src =>src.User.UploadedFiles
+                //   .Where(f => f.ContextType == FileContextType.ProfileImage)
+                //   .OrderByDescending(f => f.CreatedOn)
+                //   .Select(f => f.FileData)
+                //   .FirstOrDefault()));
+
+
             CreateMap<CreateTaskHeadDTO, TaskHead>()
                 .ForMember(dest => dest.StartDate, opt => opt.MapFrom(src => DateTime.Now))
                 .ForMember(dest => dest.Status, opt => opt.MapFrom(src =>Domain.Enum.TaskStatus.Pending));

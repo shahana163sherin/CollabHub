@@ -3,6 +3,7 @@ using CollabHub.Application.DTO;
 using CollabHub.Application.DTO.TeamLead;
 using CollabHub.Application.Interfaces.TeamLead;
 using CollabHub.Domain.Entities;
+using CollabHub.Domain.Enum;
 using CollabHub.Infrastructure.Repositories.EF;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -148,7 +149,9 @@ namespace CollabHub.Application.Services
                {
                    UserId = m.User.UserId,
                    UserName = m.User.Name,
-                   ProfileImg = m.User.ProfileImg,
+                   ProfileImg = m.User.UploadedFiles.Where(f=>f.ContextType== Domain.Enum.FileContextType.ProfileImage)
+                   .OrderByDescending(f=>f.CreatedOn)
+                   .Select(f=>f.FileData).FirstOrDefault(),
                    Role = m.Role
                }).ToList();
 
@@ -253,28 +256,67 @@ namespace CollabHub.Application.Services
 
         }
 
-        public async Task<IEnumerable<TeamDTO>>ViewMyTeamsAsync(int teamLeadId)
-        {
-            var teams = _repoTeam.QueryByCondition(t => t.CreatedBy == teamLeadId && t.IsActive && !t.IsDeleted)
-              .Include(t => t.Members.Where(m => m.IsApproved))
-               .ThenInclude(m => m.User);
-            var result = await teams.ToListAsync();
-            return _mapper.Map<IEnumerable<TeamDTO>>(result);
-        }
+       
 
-        
+        public async Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int teamLeadId)
+        {
+            var teams = await _repoTeam.QueryByCondition(t => t.CreatedBy == teamLeadId && t.IsActive && !t.IsDeleted)
+                .Include(t => t.Members)
+                    .ThenInclude(m => m.User)
+                        .ThenInclude(u => u.UploadedFiles)
+                .ToListAsync();
+
+            return teams.Select(t => new TeamDTO
+            {
+                TeamId = t.TeamId,
+                TeamName = t.TeamName,
+                Members = t.Members
+                    .Where(m => m.IsApproved)
+                    .Select(m => new TeamMemberDTO
+                    {
+                        UserId = m.UserId,
+                        UserName = m.User.Name,
+                        Role = m.Role,
+                        ProfileImg = m.User.UploadedFiles
+                            .Where(f => f.ContextType == FileContextType.ProfileImage && f.IsActive)
+                            .OrderByDescending(f => f.CreatedOn)
+                            .Select(f => f.FileData)
+                            .FirstOrDefault()
+                    }).ToList()
+            });
+        }
 
         public async Task<TeamDTO> ViewMyOneTeamAsync(int teamLeadId, int teamId)
         {
-            var team = _repoTeam.QueryByCondition(t => t.TeamId == teamId && t.CreatedBy == teamLeadId && t.IsActive && !t.IsDeleted)
-                .Include(t => t.Members.Where(m => m.IsApproved))
-                .ThenInclude(m => m.User);
-            var result = await team.FirstOrDefaultAsync();
-            if (result == null) throw new  KeyNotFoundException("Team not found");
+            var team = await _repoTeam.QueryByCondition(t => t.TeamId == teamId && t.CreatedBy == teamLeadId && t.IsActive && !t.IsDeleted)
+                .Include(t => t.Members)
+                    .ThenInclude(m => m.User)
+                        .ThenInclude(u => u.UploadedFiles)
+                .FirstOrDefaultAsync();
 
-            return _mapper.Map<TeamDTO>(result);
+            if (team == null) throw new KeyNotFoundException("Team not found");
+
+            return new TeamDTO
+            {
+                TeamId = team.TeamId,
+                TeamName = team.TeamName,
+                Members = team.Members
+                    .Where(m => m.IsApproved)
+                    .Select(m => new TeamMemberDTO
+                    {
+                        UserId = m.UserId,
+                        UserName = m.User.Name,
+                        Role = m.Role,
+                        ProfileImg = m.User.UploadedFiles
+                            .Where(f => f.ContextType == FileContextType.ProfileImage && f.IsActive)
+                            .OrderByDescending(f => f.CreatedOn)
+                            .Select(f => f.FileData)
+                            .FirstOrDefault()
+                    }).ToList()
+            };
         }
 
-       
+
+
     }
 }

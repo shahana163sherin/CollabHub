@@ -15,9 +15,10 @@ namespace CollabHub.Application.DTO.TaskDefinition
         public DateTime StartDate { get; set; }
         public DateTime DueDate { get; set; }
         public DateTime? ExtendedTo { get; set; }
-        public TaskStatus Status { get; set; }
+        public CollabHub.Domain.Enum.TaskStatus Status { get; set; }
 
-       
+
+
         //public List<AssignedMemberDTO>? AssignedMembers { get; set; }
     }
 

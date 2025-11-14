@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Microsoft.AspNetCore.Http;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Linq;
@@ -17,7 +18,7 @@ namespace CollabHub.Application.DTO.Auth
         [MinLength(6, ErrorMessage = "Password contain minimum 6 characters")]
         [Required]
         public string Password { get; set; }
-        public string? ProfileImg { get; set; }
+        public IFormFile? ProfileImg { get; set; }
 
 
     }

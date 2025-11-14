@@ -41,7 +41,7 @@ namespace CollabHub.WebAPI.Controllers
         }
 
         [HttpPut]
-        public async Task<IActionResult> UpdateProfile([FromBody]UpdateProfileDTO dto)
+        public async Task<IActionResult> UpdateProfile([FromForm]UpdateProfileDTO dto)
         {
             var userId = GetId();
             var result=await _service.UpdateProfileAsync(userId, dto);

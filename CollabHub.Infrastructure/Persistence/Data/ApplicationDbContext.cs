@@ -221,6 +221,11 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 .Property(ga => ga.Status)
                 .HasConversion<string>();
 
+            modelBuilder.Entity<FileResource>()
+                .HasOne(f => f.ReferenceUser)
+                .WithMany(u => u.UploadedFiles)
+                .HasForeignKey(f => f.ReferenceId);
+
             modelBuilder.Entity<Comment>(entity =>
             {
               
