@@ -8,12 +8,14 @@ using Microsoft.AspNetCore.Http;
 using System;
 using System.Collections.Generic;
 using System.Data;
+using System.Diagnostics;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Metadata.Ecma335;
 using System.Text;
 using System.Threading.Tasks;
 using System.Xml.Linq;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace CollabHub.Application.Services
 {
@@ -69,27 +71,29 @@ namespace CollabHub.Application.Services
 
         public async Task<ApiResponse<object>> RegisterMemberAsync(RegisterDTO dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
+            dto.Name=dto.Name.Trim();
+
             var existing = await _repo.GetOneAsync(u => u.Email == dto.Email);
             if (string.IsNullOrWhiteSpace(dto.Name) ||
                 string.IsNullOrWhiteSpace(dto.Email) ||
                 string.IsNullOrWhiteSpace(dto.Password))
 
             {
-                return new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "All fields are required."
-                };
+                return ApiResponse<object>.Fail(statusCode: 400,
+                                                    message: "All fields are required",
+                                                    type: "Validation Error",
+                                                    details: "Name,Email and Password cannot be empty");
+
             }
 
 
             if (existing != null)
             {
-                return new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Email already exist.Please use a different one"
-                };
+                return ApiResponse<object>.Fail(statusCode: 409,
+                                                      message: "Email already exist.Use new Email",
+                                                      type: "DuplicateEmail",
+                                                      details: "The provided email is already registered");
             }
 
 
@@ -117,18 +121,18 @@ namespace CollabHub.Application.Services
            
             await _repo.UpdateAsync(user);
             await _repo.SaveAsync();
-            
 
-            return new ApiResponse<object>
-            {
-                Success = true,
-                Message = "You’re in! Let’s get started.",
-                Data = new { user.UserId, user.Name, user.Email, user.Role }
-            };
+
+            return ApiResponse<object>.Success(
+                statusCode: 201,
+                message: "You’re in! Let’s get started.",
+                data: new { user.UserId, user.Name, user.Email, user.Role });
         }
 
         public async Task<ApiResponse<object>> RegisterLeaderAsync(RegisterLeaderDTO dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
+            dto.Name=dto.Name.Trim();
             var existing = await _repo.GetOneAsync(u => u.Email == dto.Email);
             if (string.IsNullOrWhiteSpace(dto.Name) ||
                 string.IsNullOrWhiteSpace(dto.Email) ||
@@ -136,21 +140,20 @@ namespace CollabHub.Application.Services
                 string.IsNullOrWhiteSpace(dto.Qualification))
 
             {
-                return new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "All fields are required."
-                };
+                return ApiResponse<object>.Fail(statusCode: 400,
+                                                    message: "All fields are required",
+                                                    type: "Validation Error",
+                                                    details: "Name,Email,Passwod and Qualification cannot be empty");
+                
             }
 
 
             if (existing != null)
             {
-                return new ApiResponse<object>
-                {
-                    Success = false,
-                    Message = "Email already exist.Please use a different one"
-                };
+                return ApiResponse<object>.Fail(statusCode: 409,
+                                                    message: "Email already exist.Use new Email",
+                                                    type: "DuplicateEmail",
+                                                    details: "The provided email is already registered");
             }
 
             
@@ -184,41 +187,42 @@ namespace CollabHub.Application.Services
             await _repo.UpdateAsync(user);
             await _repo.SaveAsync();
 
-            return new ApiResponse<object>
-            {
-                Success = true,
-                Message = "You’re in! Let’s get started.",
-                Data = new { user.UserId, user.Name, user.Email, user.Qualification, user.Role }
-            };
+            return ApiResponse<object>.Success(
+                statusCode: 201,
+                message: "You’re in! Let’s get started.",
+                data: new { user.UserId, user.Name, user.Email, user.Qualification, user.Role });
+           
         }
 
         public async Task<ApiResponse<AuthResponseDTO>> LoginAsync(LoginDTO login)
         {
+            login.Email = login.Email.Trim().ToLower();
             var user = await _repo.GetOneAsync(u => u.Email == login.Email);
             if (user == null)
             {
-                return new ApiResponse<AuthResponseDTO>
-                {
-                    Success = false,
-                    Message = "Invalid Email"
-                };
+                return ApiResponse<AuthResponseDTO>.Fail(
+                    statusCode: 400,
+                    message: "Invalid Email",
+                    type: "InvalidEmail",
+                    details: "The email you entered does not match our records");
             }
 
             if (!_hash.verifyPassword(user.Password, login.Password))
             {
-                return new ApiResponse<AuthResponseDTO>
-                {
-                    Success = false,
-                    Message = "Invalid Password"
-                };
+                return ApiResponse<AuthResponseDTO>.Fail(
+                    statusCode:400,
+                    message:"Invalid password",
+                    type:"InvalidPassword",
+                    details: "The password you entered does not match our records");
+               
             }
             if (user.IsActive == false)
             {
-                return new ApiResponse<AuthResponseDTO>
-                {
-                    Success = false,
-                    Message = "User is Blocked.Contact admin"
-                };
+                return ApiResponse<AuthResponseDTO>.Fail(
+                    statusCode: 403,
+                    message:"User is blocked.Please contact the admin",
+                    type:"UserBlocked",
+                    details:"This account has been disabled by admin");
             }
             user.LastLoginedAt = DateTime.Now;
             await _repo.UpdateAsync(user);
@@ -246,16 +250,15 @@ namespace CollabHub.Application.Services
 
             await _refresh.AddAsync(refreshEntity);
             await _refresh.SaveAsync();
-            return new ApiResponse<AuthResponseDTO>
-            {
-                Success = true,
-                Message = "Login successfully",
-                Data = new AuthResponseDTO
+            return ApiResponse<AuthResponseDTO>.Success(
+                statusCode:200,
+                message: "All set. Let’s continue.",
+                data:new AuthResponseDTO
                 {
-                    AccessToken = token,
-                    RefreshToken = refresh
-                }
-            };
+                    AccessToken=token,
+                    RefreshToken=refresh
+                });
+            
 
 
         }
@@ -264,21 +267,23 @@ namespace CollabHub.Application.Services
             var token = await _refresh.GetOneAsync(t => t.Token == refreshToken);
             if (token == null || token.IsRevoked)
             {
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = "Logout failed"
-                };
+                return ApiResponse<string>.Fail(
+                             statusCode: 401,
+                             message: "Logout failed",
+                             type: "InvalidToken",
+                             details: "Token is missing, invalid, or already revoked. Try again."
+                         );
+
             }
             token.RevokedAt = DateTime.Now;
             token.IsRevoked = true;
             await _refresh.UpdateAsync(token);
             await _refresh.SaveAsync();
-            return new ApiResponse<string>
-            {
-                Success = true,
-                Message = "Logout completed"
-            };
+            return ApiResponse<string>.Success(
+                statusCode:200,
+                message: "Logout complete — catch you later.",
+                data:null);
+           
              
         }
 
@@ -288,11 +293,11 @@ namespace CollabHub.Application.Services
             var refresh = await _refresh.GetOneAsync(r => r.Token == refreshToken);
             if(refresh == null || refresh.IsRevoked || refresh.ExpiresAt < DateTime.UtcNow)
             {
-                return new ApiResponse<AuthResponseDTO>
-                {
-                    Success = false,
-                    Message = "Invalid or expired refresh token"
-                };
+                return ApiResponse<AuthResponseDTO>.Fail(
+                    statusCode:401,
+                    message:"Invalid or expired refresh token",
+                    type:"InvalidRefreshToken",
+                    details:"The provided refresh token is invalid,revoked or no longer valid");
             }
 
             
@@ -301,11 +306,12 @@ namespace CollabHub.Application.Services
 
             if (user == null)
             {
-                return new ApiResponse<AuthResponseDTO>
-                {
-                    Success = false,
-                    Message = "Usser not found"
-                };
+                return ApiResponse<AuthResponseDTO>.Fail(
+                    statusCode: 404,
+                    message: "User not found",
+                    type: "NotFound",
+                    details: "No user exists for this refresh token");
+               
             }
 
             
@@ -323,40 +329,47 @@ namespace CollabHub.Application.Services
             {
                 Token = newRefreshToken,
                 UserId = user.UserId,
-                ExpiresAt = DateTime.Now.AddDays(7)
+                ExpiresAt = DateTime.UtcNow.AddDays(7)
             };
 
             await _refresh.AddAsync(newRefreshEntity);
             await _refresh.SaveAsync();
 
-            return new ApiResponse<AuthResponseDTO>
-            {
-                Success = true,
-                Message = "Token refreshed succesfully",
-                Data = new AuthResponseDTO
+            return ApiResponse<AuthResponseDTO>.Success(statusCode: 200,
+                message: "Token refreshed succesfully",
+                data: new AuthResponseDTO
                 {
                     AccessToken = newAccessToken,
                     RefreshToken = newRefreshToken
-                }
-            };
+                });
+           
         }
 
         public async Task<ApiResponse<string>> ResetPasswordAsync(ResetPasswordDTO dto)
         {
+            dto.Email = dto.Email.Trim().ToLower();
             var user = await _repo.GetOneAsync(u => u.Email == dto.Email);
-            if (user == null) return new ApiResponse<string>
-            {
-                Success = false,
-                Message = "User not found"
-            };
+            if (user == null) return  ApiResponse<string>.Fail(
+                    statusCode: 404,
+                    message: "User not found",
+                    type: "NotFound",
+                    details: "No user exists for this email");
 
             var tokenEntity = await _reset.GetOneAsync(r => r.UserId == user.UserId && !r.IsUsed);
             if (tokenEntity == null || tokenEntity.ExpiresAt < DateTime.UtcNow)
-                return new ApiResponse<string> { Success = false, Message = "Invalid or expired token" };
+                return ApiResponse<string>.Fail(
+                    statusCode:401,
+                    message: "Expired token",
+                    type:"ExpiredResetToken",
+                    details: "The provided reset token is expired");
 
             var isValid = _hash.verifyPassword(tokenEntity.TokenHash, dto.Token);
 
-            if (!isValid) return new ApiResponse<string> { Success = false, Message = "Invalid reset token" };
+            if (!isValid) return ApiResponse<string>.Fail(
+                statusCode:401,
+                message: "Invalid reset token",
+                type: "InvalidResetToken",
+                details: "The provided reset token is invalid");
 
             user.Password = _hash.HashPassword(dto.NewPassword);
             await _repo.UpdateAsync(user);
@@ -366,18 +379,21 @@ namespace CollabHub.Application.Services
 
             await _repo.SaveAsync();
             await _reset.SaveAsync();
-            return new ApiResponse<string>
-            {
-                Success = true,
-                Message = "Password reset successfully."
-            };
+            return ApiResponse<string>.Success(
+                statusCode: 200,
+                message: "Password reset successfully.",
+                data: null);
+           
 
         }
 
         public async Task<ApiResponse<string>> ForgotPasswordAsync(ForgetPasswordDTO fp)
         {
             var user = await _repo.GetOneAsync(u => u.Email == fp.Email);
-            if (user == null) return new ApiResponse<string> { Success = false, Message = "User not found" };
+            if (user == null) return ApiResponse<string>.Fail(statusCode: 404,
+                message: "User not found",
+                type: "NotFound",
+                details: "No user exists for this email");
 
             var rawToken=Guid.NewGuid().ToString("N");
             var hashedToken = _hash.HashPassword(rawToken);
@@ -391,11 +407,10 @@ namespace CollabHub.Application.Services
             await _reset.AddAsync(tokenEntity);
             await _reset.SaveAsync();
 
-            return new ApiResponse<string>
-            {
-                Success = true,
-                Data = rawToken
-            };
+            return ApiResponse<string>.Success(statusCode: 200,
+                message:"Token set completed",
+                data: null);
+           
         }
 
 

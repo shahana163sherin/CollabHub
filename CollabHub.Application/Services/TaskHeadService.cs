@@ -31,22 +31,21 @@ namespace CollabHub.Application.Services
 
         public async Task<ApiResponse<TaskHeadDTO>> CreateTaskAsync(CreateTaskHeadDTO dto, int teamLeadId)
         {
-            try
-            {
+           
 
 
                 var team = await _team.GetByIdAsync(dto.TeamId);
-                if (team == null) return new ApiResponse<TaskHeadDTO>
-                {
-                    Success = false,
-                    Message = "Team is not exist"
-                };
+                if (team == null) return ApiResponse<TaskHeadDTO>.Fail(
+                    statusCode:404,
+                    message:"Team is not exist",
+                    type:"NotFound");
 
-                if (team.CreatedBy != teamLeadId) return new ApiResponse<TaskHeadDTO>
-                {
-                    Success = false,
-                    Message = "You are not authorized to create the task"
-                };
+
+                if (team.CreatedBy != teamLeadId) return ApiResponse<TaskHeadDTO>.Fail(
+                    statusCode:403,
+                    message: "You are not authorized to create the task",
+                    type:"Forbidden");
+               
                 var taskHead = _mapper.Map<TaskHead>(dto);
                 taskHead.CreatedBy = teamLeadId;
                 taskHead.CreatedOn=DateTime.Now;
@@ -54,69 +53,96 @@ namespace CollabHub.Application.Services
                 taskHead.StartDate = dto.StartDate ?? DateTime.Now;
                 taskHead.Title = dto.Title;
 
-                
+
 
                 if (dto.DueDate < taskHead.StartDate)
-                    throw new ArgumentException("Due date cannot be before start date.");
+                    return ApiResponse<TaskHeadDTO>.Fail(
+                        statusCode:400,
+                        message: "Due date cannot be before start date.",
+                        type:"InvalidDateRange");
 
                 if (dto.ExpectedEndDate > dto.DueDate)
-                    throw new ArgumentException("Expected end date cannot be after due date.");
+                    return ApiResponse<TaskHeadDTO>.Fail(
+                        statusCode:400,
+                        message: "Expected end date cannot be after due date.",
+                        type:"InvalidDate");
 
                 await _taskHead.AddAsync(taskHead);
                 await _taskHead.SaveAsync();
 
                 var mapped = _mapper.Map<TaskHeadDTO>(taskHead);
                 mapped.TeamName = team.TeamName;
-                return new ApiResponse<TaskHeadDTO>
-                {
-                    Success = true,
-                    Message = "Task created Successfully",
-                    Data = mapped
-                };
-            }
-            catch (Exception ex) {
-
-                return new ApiResponse<TaskHeadDTO>
-                {
-                    Success = false,
-                    Message = ex.Message
-                };
-            }
+                return ApiResponse<TaskHeadDTO>.Success(
+                    statusCode:200,
+                    message: "Task created Successfully",
+                    data:mapped);
+               
+           
+            
         }
 
-        public async Task<bool> DeleteTaskAsync(int teamLeadId,int taskHeadId)
+        public async Task <ApiResponse<bool>> DeleteTaskAsync(int teamLeadId,int taskHeadId)
         {
             var taskHead = await _taskHead.GetByIdAsync(taskHeadId);
-            if (taskHead == null) return false;
+            if (taskHead == null)
+                return ApiResponse<bool>.Fail(
+                    statusCode:404,
+                    message:"Task not found",
+                    type:"NotFound");
 
             var team = await _team.GetByIdAsync(taskHead.TeamId);
             if (team == null)
-                throw new KeyNotFoundException("Team not found.");
+                return ApiResponse<bool>.Fail(
+                    statusCode:404,
+                    message:"Team not found",
+                    type: "NotFound")
+                    ;
             if (team.CreatedBy != teamLeadId)
-                throw new UnauthorizedAccessException("You are not authorized to delete this task.");
+                return ApiResponse<bool>.Fail(
+                    statusCode:403,
+                    message:"You are not authorized to delete this task",
+                    type:"Forbidden");
 
             taskHead.DeletedBy = teamLeadId;
             taskHead.DeletedOn = DateTime.Now;
             taskHead.IsDeleted = true;
             await _taskHead.DeleteAsync(taskHead);
             await _taskHead.SaveAsync();
-            return true;
+            return ApiResponse<bool>.Success(
+                statusCode:200,
+                data:true);
         }
 
-        public async Task<TaskHeadDTO> GetTaskHeadByIdAsync(int teamLeadId, int taskHeadId)
+        public async Task<ApiResponse<TaskHeadDTO>> GetTaskHeadByIdAsync(int teamLeadId, int taskHeadId)
         {
             var taskHead = await _taskHeadRepository.GetByIdAsync(taskHeadId);
-            if (taskHead == null) throw new KeyNotFoundException("Task head not found");
+            if (taskHead == null) return ApiResponse<TaskHeadDTO>.Fail(statusCode:404,
+                message:"Main task is not found",
+                type:"NotFound");
 
             var team = await _team.GetByIdAsync(taskHead.TeamId);
-            if (team == null) throw new KeyNotFoundException("Team not found");
-            if (team.CreatedBy != teamLeadId) throw new UnauthorizedAccessException("You cannot view this taskhead");
+            if (team == null) return ApiResponse<TaskHeadDTO>.Fail(
+                statusCode:404,
+                message:"Team is not found",
+                type: "NotFound");
 
-            if (taskHead.IsDeleted) throw new InvalidOperationException("TaskHead has been deleted");
-            return _mapper.Map<TaskHeadDTO>(taskHead);
+
+            if (team.CreatedBy != teamLeadId) return ApiResponse<TaskHeadDTO>.Fail(statusCode: 403,
+                message: "You are not authorized to get the main task",
+                type: "Forbidden");
+
+            if (taskHead.IsDeleted) return ApiResponse<TaskHeadDTO>.Fail(
+                statusCode:404,
+                message:"Task not found",
+                type:"NotFound");
+
+            return ApiResponse<TaskHeadDTO>.Success(
+                statusCode:200,
+                message:$"{taskHead.Title}...",
+                data: _mapper.Map<TaskHeadDTO>(taskHead));
         }
 
-        public async Task<IEnumerable<TaskHeadDTO>> GetAllTaskAsync(TaskHeadFilterDTO dto, int teamLeadId)
+        public async Task<ApiResponse<IEnumerable<TaskHeadDTO>>> GetAllTaskAsync(TaskHeadFilterDTO dto, int teamLeadId)
         {
             var taskHeads = await _taskHeadRepository.GetTaskHeadsAsync();
 
@@ -143,44 +169,81 @@ namespace CollabHub.Application.Services
                 };
             }
 
-            return _mapper.Map<IEnumerable<TaskHeadDTO>>(query);
+            return ApiResponse<IEnumerable<TaskHeadDTO>>.Success(
+                statusCode:200,
+                data: _mapper.Map<IEnumerable<TaskHeadDTO>>(query));
+
         }
 
-        public async Task<TaskHeadDTO> UpdateTaskAsync(int taskHeadId,UpdateTaskHeadDTO dto, int teamLeadId)
+        public async Task<ApiResponse<TaskHeadDTO>> UpdateTaskAsync(int taskHeadId,UpdateTaskHeadDTO dto, int teamLeadId)
         {
             var taskHead = await _taskHead.GetByIdAsync(taskHeadId);
-            if (taskHead == null) throw new Exception("Key not found");
+            if (taskHead == null) return ApiResponse<TaskHeadDTO>.Fail(statusCode: 404,
+                message: "Main task is not found",
+                type: "NotFound");
 
             var team=await _team.GetByIdAsync(taskHead.TeamId);
-            if (team == null) throw new KeyNotFoundException("Team not found");
-            if (team.CreatedBy != teamLeadId) throw new UnauthorizedAccessException("You are not authorized to update the task");
-            if(taskHead.IsDeleted) throw new InvalidOperationException("Cannot update a deleted task.");
+            if (team == null) return ApiResponse<TaskHeadDTO>.Fail(
+                statusCode: 404,
+                message: "Team is not found",
+                type: "NotFound");
+
+            if (team.CreatedBy != teamLeadId) return ApiResponse<TaskHeadDTO>.Fail(statusCode: 403,
+                message: "You are not authorized to update the main task",
+                type: "Forbidden");
+
+            if (taskHead.IsDeleted) return ApiResponse<TaskHeadDTO>.Fail(statusCode:400,
+                message:"Cannot update a deleted task",
+                type: "TaskHeadDeleted");
+
             taskHead.ModifiedBy= teamLeadId;
             taskHead.ModifiedOn= DateTime.Now;
-            taskHead.Title = dto.Title;
+            //taskHead.Title = dto.Title;
 
             if (dto.StartDate.HasValue && dto.StartDate.Value < DateTime.Today)
-                throw new InvalidOperationException("Start date cannot be in the past.");
+                return ApiResponse<TaskHeadDTO>.Fail(
+                    statusCode:400,
+                    message: "Start date cannot be in the past.",
+                    type: "StartDateInPast");
 
+            
             if (dto.ExpectedEndDate.HasValue && dto.StartDate.HasValue &&
                 dto.ExpectedEndDate.Value <= dto.StartDate.Value )
-                throw new InvalidOperationException("Expected end date must be after start date.");
+                return ApiResponse<TaskHeadDTO>.Fail(
+                  statusCode: 400,
+                  message: "Expected end date must be after start date.",
+                  type: "ExpectedEndDate");
+
 
             if (dto.Duedate.HasValue && dto.ExpectedEndDate.HasValue &&
                 dto.Duedate.Value <= dto.ExpectedEndDate.Value)
-                throw new InvalidOperationException("Due date must be after expected end date.");
+                return ApiResponse<TaskHeadDTO>.Fail(
+                 statusCode: 400,
+                 message: "Due date must be after expected end date.",
+                 type: "DueDateError");
+
 
             if (dto.Duedate.HasValue && dto.Duedate.Value < DateTime.Today)
-                throw new InvalidOperationException("Due date cannot be in the past.");
+                return ApiResponse<TaskHeadDTO>.Fail(
+                statusCode: 400,
+                message: "Due date cannot be in the past.",
+                type: "DueDateInPast");
+
 
             if (dto.ExtendedTo.HasValue && dto.Duedate.HasValue)
             {
                 if (dto.ExtendedTo.Value <= dto.Duedate.Value)
-                    throw new InvalidOperationException("Extended date must be after due date.");
+                    return ApiResponse<TaskHeadDTO>.Fail(
+                statusCode: 400,
+                message: "Extended date must be after due date.",
+                type: "ExtendedDateError");
 
                 var difference = (dto.ExtendedTo.Value - dto.Duedate.Value).TotalDays;
                 if (difference > 2)
-                    throw new InvalidOperationException("Extended date cannot be more than 2 days after the due date.");
+                    return ApiResponse<TaskHeadDTO>.Fail(
+               statusCode: 400,
+               message: "Extended date cannot be more than 2 days after the due date.",
+               type: "ExtendedDateLimit");
             }
 
 
@@ -208,7 +271,9 @@ namespace CollabHub.Application.Services
             await _taskHead.UpdateAsync(taskHead);
             await _taskHead.SaveAsync();
 
-            return _mapper.Map<TaskHeadDTO>(taskHead);
+            return ApiResponse<TaskHeadDTO>.Success(
+                statusCode:200,
+                data: _mapper.Map<TaskHeadDTO>(taskHead));
 
 
 

@@ -39,7 +39,8 @@ namespace CollabHub.Infrastructure.Security
                 {
                     new Claim(ClaimTypes.NameIdentifier,user.UserId.ToString()),
                     new Claim(ClaimTypes.Email,user.Email),
-                    new Claim(ClaimTypes.Role,user.Role.ToString())
+                    new Claim(ClaimTypes.Role,user.Role.ToString()),
+                    new Claim("pwd_changed",(user.LastPasswordChangedAt ?? DateTime.MinValue).Ticks.ToString())    
                 }),
                 NotBefore=now,
                 Expires = now.AddMinutes(_jwt.AccessTokenExpirationMinutes),

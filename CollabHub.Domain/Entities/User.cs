@@ -25,7 +25,9 @@ namespace CollabHub.Domain.Entities
         public bool IsActive { get; set; } = true;
         public DateTime? LastLoginedAt { get; set; }
         public DateTime? LastEmailNotifiedAt { get; set; }
+        public DateTime? LastPasswordChangedAt { get; set; }
         public string? Qualification { get; set; }
+
         public int? TeamId { get; set; }
         public Team Team { get; set; }
         public ICollection<LoginAudit> LoginAudits { get; set; } = new List<LoginAudit>();

@@ -8,8 +8,8 @@ using System.Security.Claims;
 namespace CollabHub.WebAPI.Controllers
 {
     [ApiController]
-    [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/[controller]/[action]")]
+    
+    [Route("api/[controller]/[action]")]
     [Authorize]
     public class ProfileController:ControllerBase
     {
@@ -32,11 +32,12 @@ namespace CollabHub.WebAPI.Controllers
             return userId;
         }
         [HttpGet]
-        public async Task<IActionResult> VieMyProfile()
+        public async Task<IActionResult> ViewMyProfile()
         {
             var userId = GetId();
             var result = await _service.GetProfileAsync(userId);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
+
 
         }
 
@@ -45,7 +46,8 @@ namespace CollabHub.WebAPI.Controllers
         {
             var userId = GetId();
             var result=await _service.UpdateProfileAsync(userId, dto);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
+
         }
 
         [HttpPut]
@@ -53,7 +55,8 @@ namespace CollabHub.WebAPI.Controllers
         {
             var userId = GetId();
             var result=await _service.ChangePasswordAsync(userId, dto);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
+
         }
     }
 }

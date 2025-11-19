@@ -1,12 +1,13 @@
-﻿using CollabHub.Application.DTO;
+﻿using AutoMapper;
+using CollabHub.Application.DTO;
 using CollabHub.Application.Interfaces;
 using CollabHub.Application.Interfaces.Auth;
 using CollabHub.Domain.Entities;
 using CollabHub.Domain.Enum;
 using CollabHub.Infrastructure.Repositories.EF;
 using Microsoft.AspNetCore.Http;
-using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Identity;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Buffers.Text;
 using System.Collections.Generic;
@@ -76,10 +77,19 @@ namespace CollabHub.Application.Services
                             .FirstOrDefault();
 
             if (user == null)
-                return new ApiResponse<string> { Success = false, Message = "User not found" };
+                return ApiResponse<string>.Fail(
+                    statusCode:404,
+                    message:"User not found",
+                    type: "NotFound",
+                    details:"No user exists");
 
             if (string.IsNullOrEmpty(dto.Name))
-                return new ApiResponse<string> { Success = false, Message = "Name cannot be empty" };
+                return ApiResponse<string>.Fail(
+                    statusCode: 400,
+                    message: "Name cannot be empty",
+                    type: "ValidationError",
+                    details: "Name field was missing or not provided"
+                    ); 
 
             user.Name = dto.Name;
 
@@ -107,7 +117,10 @@ namespace CollabHub.Application.Services
             await _repo.UpdateAsync(user);
             await _repo.SaveAsync();
 
-            return new ApiResponse<string> { Success = true, Message = "Profile updated successfully" };
+            return ApiResponse<string>.Success(
+                statusCode:200,
+                message: "Profile updated successfully",
+                data:null); 
         }
         public async Task<ApiResponse<object>> GetProfileAsync(int userId)
         {
@@ -117,9 +130,13 @@ namespace CollabHub.Application.Services
                             .FirstOrDefault();
 
             if (user == null)
-                return new ApiResponse<object> { Success = false, Message = "User not found" };
+                 return ApiResponse<object>.Fail(
+                    statusCode: 404,
+                    message: "User not found",
+                    type: "NotFound",
+                    details: "No user exists");
 
-        
+
             var profileImageBase64 = user.UploadedFiles
                 .Where(f => f.ContextType == FileContextType.ProfileImage && f.IsActive)
                 .OrderByDescending(f => f.CreatedOn)
@@ -135,7 +152,10 @@ namespace CollabHub.Application.Services
                 Qualification = user.Role == Domain.Enum.UserRole.TeamLead ? user.Qualification : null
             };
 
-            return new ApiResponse<object> { Success = true, Message = "Profile fetched successfully", Data = profile };
+            return  ApiResponse<object>.Success(
+                statusCode: 200,
+                message: "Profile fetched successfully",
+                data: profile);
         }
 
         public async Task<ApiResponse<string>> ChangePasswordAsync(int userId, ChangePasswordDTO dto)
@@ -143,33 +163,49 @@ namespace CollabHub.Application.Services
             var user = _repo.QueryByCondition(u => u.UserId == userId)
                     .Include(u => u.UploadedFiles)
                     .FirstOrDefault();
-            if (user == null) return new ApiResponse<string> { Success = false, Message = "User not found" };
+            if (user == null) return ApiResponse<string>.Fail(
+                    statusCode: 404,
+                    message: "User not found",
+                    type: "NotFound",
+                    details: "No user exists");
 
             bool validCurrent = _hash.verifyPassword(user.Password, dto.CurrentPassword);
-            if (!validCurrent) return new ApiResponse<string> { Success = false, Message = "Current Password is incorrect" };
-
+            if (!validCurrent) return ApiResponse<string>.Fail(
+                statusCode:400,
+                message:"Curren password is incorrect",
+                type:"IncorrectPassword",
+                details:"The provided current password is incorrect"
+                );
+            dto.NewPassword = dto.NewPassword.Trim();
             if (string.IsNullOrEmpty(dto.NewPassword) || dto.NewPassword.Length < 6)
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = "New password must be atleast 6 characters"
-                };
+                return ApiResponse<string>.Fail(
+                           statusCode: 400,
+                           message: "New password must be at least 6 characters",
+                           type: "InvalidPasswordLength",
+                           details: "The new password is either empty or shorter than 6 characters. Provide a valid password.");
+            
 
-            if (dto.NewPassword != dto.ConfirmPassword) return new ApiResponse<string>
-            {
-                Success = false,
-                Message = "Password do not match"
-            };
+            if (dto.NewPassword != dto.ConfirmPassword) return ApiResponse<string>.Fail(
+                        statusCode: 400,
+                        message: "Password do not match",
+                        type: "PasswordMismatch",
+                        details: "The ConfirmPassword value does not match the NewPassword value."
+                    );
 
             user.Password = _hash.HashPassword(dto.NewPassword);
+            user.LastPasswordChangedAt = DateTime.UtcNow;
             user.ModifiedBy = user.UserId;
             user.ModifiedOn = DateTime.Now;
 
             await _repo.UpdateAsync(user);
             await _repo.SaveAsync();
 
-            return new ApiResponse<string> { Success = true, Message = "Password changed successfully" };
-
+            return ApiResponse<string>.Success(
+                statusCode: 200,
+                message: "Password changed successfully",
+                data: null);
         }
+
     }
+    
 }

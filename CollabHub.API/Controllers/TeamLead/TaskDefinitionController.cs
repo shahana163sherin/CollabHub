@@ -8,9 +8,9 @@ using System.Security.Claims;
 namespace CollabHub.WebAPI.Controllers.TeamLead
 {
     [ApiController]
-    [ApiVersion("1.0")]
+   
     [Authorize (Roles="TeamLead")]
-    [Route("api/v{version:apiVersion}/[controller]/[action]")]
+    [Route("api/[controller]/[action]")]
     public class TaskDefinitionController:ControllerBase
     {
         private readonly ITaskDefinition _def;
@@ -37,34 +37,18 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var teamLeadId = GetId();
 
-            try
-            {
+           
                 var createdTaskDef = await _def.CreateTaskDefinitionAsync(dto, teamLeadId);
-                return Ok(createdTaskDef); 
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(); 
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+                return StatusCode(createdTaskDef.StatusCode, createdTaskDef);
+            
         }
         [HttpPut("{taskDefinitionId}")]
         public async Task<IActionResult> UpdateTaskDefinition([FromRoute]int taskDefinitionId,[FromBody]UpdateTaskDefinitionDTO dto)
         {
             var teamLeadId = GetId();
             var result = await _def.UpdateTaskDefinitionAsync(dto, teamLeadId, taskDefinitionId);
-            if (!result)
-            {
-                return NotFound(new { message = "You are not authorized to update or task not found" });
-            }
-            return Ok(new { message = "Task updated successfully" });
+            return StatusCode(result.StatusCode, result);
+           
         }
 
         [HttpDelete("{taskDefinitionId}")]
@@ -72,11 +56,8 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var teamleadId = GetId();
             var response = await _def.DeleteTaskDefinitionAsync(taskDefinitionId, teamleadId);
-            if (!response)
-            {
-                return NotFound(new { message = "You are not authorized to delete or task not found" });
-            }
-            return NoContent();
+           
+            return StatusCode(response.StatusCode,response);
         }
 
         [HttpPut("{taskId}/{memberId}")]
@@ -84,11 +65,8 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var teamLeadId = GetId();
             var result = await _def.AssignMemberAsync(taskId, memberId, teamLeadId);
-            if (!result)
-            {
-                return NotFound(new { message = "You are not authorized to update or task not found" });
-            }
-            return Ok(new { message = "Member assigned successfully" });
+
+            return StatusCode(result.StatusCode, result);
 
         }
         [HttpDelete("{taskDefinitionId}/{memberId}")]
@@ -97,58 +75,29 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var teamLeadId = GetId();
             var result = await _def.RemoveMemberAsync(taskDefinitionId, memberId, teamLeadId);
-            if (!result)
-            {
-                return NotFound(new { message = "You are not authorized to update or task not found" });
-            }
-            return NoContent();
+
+            return StatusCode(result.StatusCode, result);
         }
         [HttpGet]
         public async Task<IActionResult>GetTaskDefinitionById(int taskDefinitionId)
         {
             var teamLeadId= GetId();
-            try
-            {
+           
                 var result = await _def.GetTaskDefinitionById(taskDefinitionId, teamLeadId);
+                return StatusCode(result.StatusCode, result);
 
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+
         }
 
         [HttpGet]
         public async Task<IActionResult>GetAllTaskDefinition(int taskHeadId)
         {
             var teamLead= GetId();
-            try
-            {
+           
                 var result = await _def.GetAllTaskDefinition(taskHeadId, teamLead);
 
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+                return StatusCode(result.StatusCode, result);
+
 
         }
     }

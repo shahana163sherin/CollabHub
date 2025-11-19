@@ -1,4 +1,5 @@
 ﻿using AutoMapper;
+using AutoMapper.Execution;
 using CollabHub.Application.DTO;
 using CollabHub.Application.DTO.Task;
 using CollabHub.Application.DTO.TaskDefinition;
@@ -45,26 +46,20 @@ namespace CollabHub.Application.Services
 
         public async Task<ApiResponse<JoinResponseDTO>> JoinTeamAsync(JoinRequestDTO dto, int memberId)
         {
-            try
-            {
-               
+
                 var team = await _teamRepo.GetOneAsync(t => t.InviteLink == dto.InviteCode);
                 if (team == null)
-                    return new ApiResponse<JoinResponseDTO>
-                    {
-                        Success = false,
-                        Message = "Join request sent for approval"
-                    };
+                    return ApiResponse<JoinResponseDTO>.Success(statusCode: 200,
+                        message: "Join request sent for approval",
+                        data: null);
 
-                
+
                 var user = await _userRepo.GetByIdAsync(memberId);
                 if (user == null)
-                    return new ApiResponse<JoinResponseDTO>
-                    {
-                        Success = false,
-                        Message = "User not found"
-                    };
-
+                    return ApiResponse<JoinResponseDTO>.Fail(statusCode: 404,
+                        message: "User not found",
+                        type:"NotFound"
+                  );
              
                 var alreadyMember = await _teamMemberRepo.GetOneAsync(m => m.TeamId == team.TeamId && m.UserId == memberId && !m.IsDeleted && !m.IsRejected);
                 if (alreadyMember != null)
@@ -80,18 +75,16 @@ namespace CollabHub.Application.Services
                         await _teamMemberRepo.SaveAsync();
 
                         var result = _mapper.Map<JoinResponseDTO>(alreadyMember);
-                        return new ApiResponse<JoinResponseDTO>
-                        {
-                            Success = true,
-                            Message = "Rejoined team successfully",
-                            Data = result
-                        };
+                        return ApiResponse<JoinResponseDTO>.Success(statusCode:200,
+                            message:"Rejoined team successfully",
+                            data:result);
+                      
                     }
-                    return new ApiResponse<JoinResponseDTO>
-                    {
-                        Success = false,
-                        Message = "User already part of this team"
-                    };
+                    return ApiResponse<JoinResponseDTO>.Fail(
+                        statusCode:409,
+                        message: "User already part of this team",
+                        type:"AlreadyPart");
+                  
                 }
 
 
@@ -108,23 +101,12 @@ namespace CollabHub.Application.Services
                
 
                 
-                return new ApiResponse<JoinResponseDTO>
-                {
-                    Success = true,
-                    Message = "Join request sent for approval",
-                    Data = response
-                };
-            }
-            catch (Exception ex)
-            {
-               
-                
-                return new ApiResponse<JoinResponseDTO>
-                {
-                    Success = false,
-                    Message = $"Error while joining team: {ex.Message}"
-                };
-            }
+              
+                 return ApiResponse<JoinResponseDTO>.Success(statusCode: 200,
+                        message: "Join request sent for approval",
+                        data: null);
+            
+          
         }
 
         public async Task<ApiResponse<string>> LeaveTeamAsync(int userId)
@@ -132,11 +114,12 @@ namespace CollabHub.Application.Services
             var member = await _teamMemberRepo.GetOneAsync(m => m.UserId == userId && !m.IsDeleted && !m.IsRejected);
             if (member == null)
             {
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = "You are not a part of any active team"
-                };
+                return ApiResponse<string>.Fail(
+
+                    statusCode: 400,
+                    message: "You are not a part of any active team",
+                    type: "NotInActiveTeam");
+
             }
 
             member.IsDeleted = true;
@@ -145,17 +128,17 @@ namespace CollabHub.Application.Services
             await _teamMemberRepo.UpdateAsync(member);
             await _teamMemberRepo.SaveAsync();
 
-            return new ApiResponse<string>
-            {
-                Success = true,
-                Message = "You have left the team successfully."
-            };
+            return ApiResponse<string>.Success(
+                statusCode:200,
+                message: "You have left the team successfully.",
+                data:null);
+            
 
 
         }
        
 
-        public async Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int userId)
+        public async Task<ApiResponse<IEnumerable<TeamDTO>>> ViewMyTeamsAsync(int userId)
         {
             var teams = await _teamRepo.QueryByCondition(t =>
                 t.Members.Any(m => m.UserId == userId && m.IsApproved) &&
@@ -184,10 +167,13 @@ namespace CollabHub.Application.Services
                     }).ToList()
             });
 
-            return result;
+            return ApiResponse<IEnumerable<TeamDTO>>.Success(
+                statusCode:200,
+                message:"My teams...",
+                data:result);
         }
 
-        public async Task<TeamDTO> ViewTeamById(int teamId, int userId)
+        public async Task<ApiResponse<TeamDTO>> ViewTeamById(int teamId, int userId)
         {
             var team = await _teamRepo.QueryByCondition(t => t.TeamId == teamId && t.IsActive && !t.IsDeleted)
                 .Include(t => t.Members)
@@ -195,15 +181,26 @@ namespace CollabHub.Application.Services
                         .ThenInclude(u => u.UploadedFiles)
                 .FirstOrDefaultAsync();
 
-            if (team == null) throw new KeyNotFoundException("Team not found");
-            if (!team.Members.Any(m => m.UserId == userId && m.IsApproved))
-                throw new UnauthorizedAccessException("You are not authorized to view this team");
+            if (team == null) return ApiResponse<TeamDTO>.Fail(
+                  statusCode: 404,
+                  message: "Team not found",
+                  type: "NotFound");
 
-            return new TeamDTO
-            {
-                TeamId = team.TeamId,
-                TeamName = team.TeamName,
-                Members = team.Members
+            if (!team.Members.Any(m => m.UserId == userId && m.IsApproved))
+                return ApiResponse<TeamDTO>.Fail(
+                     statusCode: 403,
+                     message: "You are not authorized to view this team",
+                     type: "Forbidden"
+                     );
+
+            return ApiResponse<TeamDTO>.Success(
+                statusCode: 200,
+                message: $"{team.TeamName}....",
+                data: new TeamDTO
+                {
+                    TeamId = team.TeamId,
+                    TeamName = team.TeamName,
+                    Members = team.Members
                     .Where(m => m.IsApproved)
                     .Select(m => new TeamMemberDTO
                     {
@@ -216,50 +213,69 @@ namespace CollabHub.Application.Services
                             .Select(f => f.FileData)
                             .FirstOrDefault()
                     }).ToList()
-            };
+                });
+
+
         }
 
-        public async Task<IEnumerable<TaskHeadDTO>> GetTasksByTeamAsync(int teamId, int userId)
+        public async Task<ApiResponse<IEnumerable<TaskHeadDTO>>> GetTasksByTeamAsync(int teamId, int userId)
         {
             var team = await _teamRepo.GetByIdAsync(teamId);
-            if (team == null) throw new KeyNotFoundException("Team not found");
+            if (team == null)
+                if (team == null) return ApiResponse < IEnumerable < TaskHeadDTO >>.Fail(
+                      statusCode: 404,
+                      message: "Team not found",
+                      type: "NotFound");
 
             var member = await _teamMemberRepo
         .QueryByCondition(m => m.UserId == userId && m.TeamId == teamId && m.IsApproved)
         .FirstOrDefaultAsync();
-            if (member == null || member.TeamId != teamId) throw new UnauthorizedAccessException("Member does not belong to this team");
-             var taskHead=await _task.GetByConditionAsync(th=>th.TeamId == teamId);
-            return taskHead.Select(th => new TaskHeadDTO
-            {
-                TaskHeadId = th.TaskHeadId,
-                Title = th.Title,
-                StartDate = th.StartDate,
-                ExpectedEndDate = th.ExpectedEndDate,
-                DueDate = th.DueDate
-            });
-            
-        }
+            if (member == null || member.TeamId != teamId) return ApiResponse<IEnumerable<TaskHeadDTO>>.Fail(
+                     statusCode: 403,
+                     message: "You are not authorized to view this task",
+                     type: "Forbidden"
+                     );
 
-        public async Task<IEnumerable<TaskDefinitionDTO>> ViewMyAssignedTask(int userId)
+            var taskHead =await _task.GetByConditionAsync(th=>th.TeamId == teamId);
+            return ApiResponse<IEnumerable<TaskHeadDTO>>.Success(
+                statusCode:200,
+                message:"View the task",
+                data: taskHead.Select(th => new TaskHeadDTO
+                {
+                    TaskHeadId = th.TaskHeadId,
+                    Title = th.Title,
+                    StartDate = th.StartDate,
+                    ExpectedEndDate = th.ExpectedEndDate,
+                    DueDate = th.DueDate
+                }));
+            
+             }
+
+        public async Task <ApiResponse<IEnumerable<TaskDefinitionDTO>>> ViewMyAssignedTask(int userId)
         {
             var member = await _teamMemberRepo
                 .QueryByCondition(m => m.UserId == userId && m.IsApproved)
                 .FirstOrDefaultAsync();
-            if (member == null) throw new KeyNotFoundException("Member not found");
+            if (member == null) return ApiResponse<IEnumerable<TaskDefinitionDTO>>.Fail(
+                  statusCode: 404,
+                  message: "Member not found",
+                  type: "NotFound");
 
             var taskDef = await _def.GetByConditionAsync(td => td.AssignedMemberId == member.TeamMemberId && !td.IsDeleted);
-            return taskDef.Select(td => new TaskDefinitionDTO
-            {
-                TaskDefinitionId = td.TaskDefinitionId,
-                TaskHeadId = td.TaskHeadId,
-                Description = td.Description,
-                Status=td.Status,
-                StartDate = td.StartDate,
-                DueDate = td.DueDate,
-                ExtendedTo = td.ExtendedTo
+            return ApiResponse<IEnumerable<TaskDefinitionDTO>>.Success(
+                statusCode:200,
+                data: taskDef.Select(td => new TaskDefinitionDTO
+                {
+                    TaskDefinitionId = td.TaskDefinitionId,
+                    TaskHeadId = td.TaskHeadId,
+                    Description = td.Description,
+                    Status = td.Status,
+                    StartDate = td.StartDate,
+                    DueDate = td.DueDate,
+                    ExtendedTo = td.ExtendedTo
 
 
-            });
+                }));
 
         }
     }

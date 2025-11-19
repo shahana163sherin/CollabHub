@@ -56,6 +56,7 @@ namespace CollabHub.Infrastructure.Persistence.Data
 
             modelBuilder.Entity<Team>()
                 .HasIndex(t => t.TeamName)
+                .HasFilter("[IsDeleted]=0")
                 .IsUnique();
 
             

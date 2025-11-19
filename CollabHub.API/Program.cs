@@ -45,6 +45,55 @@ namespace CollabHub.API
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.SecretKey)),
                     RoleClaimType = ClaimTypes.Role
                 };
+                options.Events = new JwtBearerEvents
+                {
+                    OnTokenValidated = async context =>
+                    {
+                        var identity = context.Principal.Identity as ClaimsIdentity;
+                        if (identity == null)
+                        {
+                            context.Fail("Invalid token identity");
+                            return;
+                        }
+                        var userIdCliam = identity.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                        if (string.IsNullOrEmpty(userIdCliam))
+                        {
+                            context.Fail("User id is missing");
+                            return;
+                        }
+
+                        var tokenpwd = identity.FindFirst("pwd_changed")?.Value;
+                        if (string.IsNullOrEmpty(tokenpwd))
+                        {
+                            context.Fail("Token missing password change info");
+                            return;
+                        }
+
+                        long tokenTicks = long.Parse(tokenpwd);
+                        int userId = int.Parse(userIdCliam);
+
+                        var db = context.HttpContext.RequestServices.GetRequiredService<ApplicationDbContext>();
+                        var user = await db.Users.FindAsync(userId);
+
+                        if(user == null)
+                        {
+                            context.Fail("User not found");
+                            return;
+                        }
+                        if(user.IsDeleted || !user.IsActive) {
+                            context.Fail("User revocked");
+                            return;
+                        }
+
+                        var userTicks = (user.LastPasswordChangedAt ?? DateTime.MinValue).Ticks;
+                        if (userTicks > tokenTicks)
+                        {
+                            context.Fail("Password chnaged");
+                            return;
+                        }
+                        
+                    }
+                };
 
 
             });
@@ -55,13 +104,7 @@ namespace CollabHub.API
             builder.Services.AddApplicationService();
 
 
-            builder.Services.AddApiVersioning(options =>
-            {
-                options.DefaultApiVersion = new ApiVersion(1, 0);
-                options.AssumeDefaultVersionWhenUnspecified = true;
-                options.ReportApiVersions = true;
-                options.ApiVersionReader = new HeaderApiVersionReader("api-version");
-            });
+           
 
             // Learn more about configuring Swagger/OpenAPI at https://aka.ms/aspnetcore/swashbuckle
             builder.Services.AddEndpointsApiExplorer();

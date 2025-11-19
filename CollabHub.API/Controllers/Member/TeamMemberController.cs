@@ -10,8 +10,8 @@ using System.Security.Claims;
 namespace CollabHub.WebAPI.Controllers.Member
 {
     [ApiController]
-    [Route("api/v{version:apiVersion}/[controller]/[action]")]
-    [ApiVersion("1.0")]
+    [Route("api/[controller]/[action]")]
+    
     [Authorize (Roles="Member")]
     public class TeamMemberController:ControllerBase
     {
@@ -38,8 +38,8 @@ namespace CollabHub.WebAPI.Controllers.Member
         {
             var memberId = GetId();
             var result=await _service.JoinTeamAsync(dto, memberId);
-            if (!result.Success) return BadRequest(result.Message);
-            return Ok(result);
+            //if (!result.Success) return BadRequest(result.Message);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpDelete]
@@ -47,75 +47,47 @@ namespace CollabHub.WebAPI.Controllers.Member
         {
             var memberId = GetId();
             var result=await _service.LeaveTeamAsync(memberId);
-            if(!result.Success)return BadRequest(result.Message);
-            return Ok(result);
+            //if(!result.Success)return BadRequest(result.Message);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet]
         public async Task<IActionResult>ViewMyTeam()
         {
-            try
-            {
+           
                 var userId = GetId();
                 var result = await _service.ViewMyTeamsAsync(userId);
-                return Ok(result);
-            }
-           
-             catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+                 return StatusCode(result.StatusCode, result);
+
         }
         [HttpGet]
         public async Task<IActionResult>ViewTeamById(int teamId)
         {
-            try
-            {
+           
                 var userId = GetId();
                 var result = await _service.ViewTeamById(teamId, userId);
-                return Ok(result);
-            }
-            catch(KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+                return StatusCode(result.StatusCode, result);
+          
+           
         }
         [HttpGet]
         public async Task<IActionResult>ViewTaskHead(int teamId)
         {
             var memberId= GetId();
-            try
-            {
-                var taskHeads = await _service.GetTasksByTeamAsync(teamId, memberId);
-                return Ok(taskHeads);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
+           
+                var result = await _service.GetTasksByTeamAsync(teamId, memberId);
+                return StatusCode(result.StatusCode, result);
+           
         }
 
         [HttpGet]
         public async Task <IActionResult>ViewMyAssignedTask()
         {
             var memberId=GetId();
-            try
-            {
-                var assignedTasks = await _service.ViewMyAssignedTask(memberId);
-                return Ok(assignedTasks);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
+            
+                var result = await _service.ViewMyAssignedTask(memberId);
+            return StatusCode(result.StatusCode, result);
+
         }
         
     }

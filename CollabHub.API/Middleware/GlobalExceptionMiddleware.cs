@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Authentication;
+﻿using CollabHub.Application.DTO;
+using Microsoft.AspNetCore.Authentication;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using System.Net;
 using System.Text.Json;
@@ -26,20 +27,20 @@ namespace CollabHub.WebAPI.Middleware
             {
 
                 _logger.LogError(ex, "Unhandled exception occured");
-                context.Response.ContentType = "application/json";
-                context.Response.StatusCode = ex switch
+              int statuscode = ex switch
                 {
                     UnauthorizedAccessException => (int)HttpStatusCode.Unauthorized,
                     KeyNotFoundException => (int)HttpStatusCode.NotFound,
                     InvalidOperationException => (int)HttpStatusCode.BadRequest,
                     _ => (int)HttpStatusCode.InternalServerError
                 };
-                var response = new
-                {
-                    success = false,
-                    message = ex.Message,
-                    errorType = ex.GetType().Name
-                };
+                context.Response.ContentType="application/json";
+                context.Response.StatusCode = statuscode;
+                var response = ApiResponse<object>.Fail(
+                    statusCode: statuscode,
+                    message:ex.Message,
+                    type:ex.GetType().Name,
+                    details: "An unexpected error occurred while processing the request");
 
                 await context.Response.WriteAsync(JsonSerializer.Serialize(response));
 

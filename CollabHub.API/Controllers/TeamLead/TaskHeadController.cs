@@ -9,8 +9,8 @@ using System.Security.Claims;
 namespace CollabHub.WebAPI.Controllers.TeamLead
 {
     [ApiController]
-    [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/[controller]/[action]")]
+    
+    [Route("api/[controller]/[action]")]
     [Authorize(Roles = "TeamLead")]
     public class TaskHeadController : ControllerBase
     {
@@ -39,8 +39,7 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var teamLeadId = GetId();
             var result = await _service.CreateTaskAsync(dto, teamLeadId);
-            if (result == null) return BadRequest("Failed to create");
-            return StatusCode(201, result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpPatch("{taskHeadId}")]
@@ -48,66 +47,34 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var teamLeadId = GetId();
             var result = await _service.UpdateTaskAsync(taskHeadId, dto, teamLeadId);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
         [HttpDelete("{taskHeadId}")]
         public async Task<IActionResult> DeleteTask([FromRoute] int taskHeadId)
         {
             var teamLeadId = GetId();
 
-            try
-            {
                 var result = await _service.DeleteTaskAsync(teamLeadId, taskHeadId);
 
-                if (!result)
-                    return NotFound(new { message = $"Task {taskHeadId} not found." });
-
-                return NoContent();
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message); 
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message }); 
-            }
-            catch (Exception ex)
-            {
-              
-                return StatusCode(500, new { message = "An unexpected error occurred.", details = ex.Message });
-            }
+            return StatusCode(result.StatusCode, result);
         }
         [HttpGet]
         public async Task<IActionResult>GetAllTaskHead([FromQuery]TaskHeadFilterDTO dto)
         {
             var teamLeadId= GetId();
             var result = await _service.GetAllTaskAsync(dto, teamLeadId);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
 
         }
         [HttpGet("{taskHeadId}")]
         public async Task<IActionResult> GetTaskById([FromRoute]int taskHeadId)
         {
             var teamLeadId = GetId();
-            try
-            {
+          
                 var result = await _service.GetTaskHeadByIdAsync( teamLeadId,taskHeadId);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(ex.Message);
-            }
-            catch (UnauthorizedAccessException ex)
-            {
-                return Forbid(ex.Message);
-            }
-            catch (InvalidOperationException ex)
-            {
-                return BadRequest(ex.Message);
-            }
+            return StatusCode(result.StatusCode, result);
         }
+            
 
     }
 }

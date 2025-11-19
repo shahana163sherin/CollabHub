@@ -20,10 +20,10 @@ namespace CollabHub.Application.Interfaces.TeamMember
         Task<ApiResponse<JoinResponseDTO>> JoinTeamAsync(JoinRequestDTO dto, int memberId);
         Task<ApiResponse<string>> LeaveTeamAsync(int userId);
 
-        Task<IEnumerable<TeamDTO>> ViewMyTeamsAsync(int userId);
-        Task<TeamDTO> ViewTeamById(int teamId, int userId);
-        Task<IEnumerable<TaskHeadDTO>> GetTasksByTeamAsync(int teamId, int memberId);
-        Task<IEnumerable<TaskDefinitionDTO>> ViewMyAssignedTask(int memberId);
+        Task<ApiResponse<IEnumerable<TeamDTO>>> ViewMyTeamsAsync(int userId);
+        Task<ApiResponse<TeamDTO>> ViewTeamById(int teamId, int userId);
+        Task<ApiResponse<IEnumerable<TaskHeadDTO>>> GetTasksByTeamAsync(int teamId, int memberId);
+        Task<ApiResponse<IEnumerable<TaskDefinitionDTO>>> ViewMyAssignedTask(int memberId);
         //Task<ApiResponse<MemberTaskDTO>> GetTaskDetailAsync(int taskId, int memberId);
 
         //Task<ApiResponse<string>> SubmitCommitAsync(MemberCreateCommitDTO dto, int memberId);

@@ -10,8 +10,8 @@ using System.Security.Claims;
 namespace CollabHub.WebAPI.Controllers.TeamLead
 {
     [ApiController]
-    [ApiVersion("1.0")]
-    [Route("api/v{version:apiVersion}/[controller]/[action]")]
+   
+    [Route("api/[controller]/[action]")]
     [Authorize(Roles = "TeamLead")]
     public class TeamLeadController:ControllerBase
     {
@@ -26,10 +26,10 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
             var claimValue = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
 
             if (string.IsNullOrWhiteSpace(claimValue))
-                throw new UnauthorizedAccessException("User ID not found in token");
+                throw new UnauthorizedAccessException("Token does not contain a valid user identifier");
 
             if (!int.TryParse(claimValue, out var userId))
-                throw new UnauthorizedAccessException("Invalid User ID format in token");
+                throw new UnauthorizedAccessException("User ID in token is not a valid number");
 
             return userId;
         }
@@ -40,29 +40,17 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var leaderId=GetId();
             var result = await _service.CreateTeamAsync(dto, leaderId);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
+
         }
 
         [HttpPatch]
         public async Task<IActionResult> UpdateTeam(UpdateTeamDTO dto)
         {
             var leadid = GetId();
-            try {
+         
                 var result = await _service.UpdateTeamAsync(dto, leadid);
-                return Ok(result);
-            }
-            catch (KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch(UnauthorizedAccessException ex)
-            {
-                return Forbid();
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
+                return StatusCode(result.StatusCode, result);
 
         }
 
@@ -78,8 +66,9 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         public async Task<IActionResult> ApproveMember([FromBody]ApproveMemberDTO dto)
         {
             var TeamLeadId=GetId();
-            var response = await _service.ApproveMemberAsync(dto, TeamLeadId);
-            return Ok(new { Success = response, Message = response ? "Member Approved" : "Failed" });
+            var result = await _service.ApproveMemberAsync(dto, TeamLeadId);
+            return StatusCode(result.StatusCode, result);
+
         }
 
         [HttpPut]
@@ -87,7 +76,7 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var TeamLeadId=GetId();
             var result = await _service.RejectMemberAsync(dto, TeamLeadId);
-            return Ok(new { Success = result, Message = result ? "Member Rejected" : "Failed" });
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpGet]
@@ -95,7 +84,7 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var teamLeadId = GetId();
             var result = await _service.GetTeamMembersAsync(dto, teamLeadId);
-            return Ok(result);
+            return StatusCode(result.StatusCode, result);
         }
 
         [HttpDelete("{TeamId}/{MemberId}")]
@@ -103,34 +92,23 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
         {
             var leadId = GetId();
             var result = await _service.RemoveMemberAsync(TeamId,MemberId, leadId);
-            return Ok(new { Success = result, Message = result ? "Member Removed" : "Failed" });
+            return StatusCode(result.StatusCode, result);
         }
         [HttpGet]
         public async Task<IActionResult> ViewMyTeams()
         {
                 var teamLeadId = GetId();
                 var result= await _service.ViewMyTeamsAsync(teamLeadId);
-                 return Ok(result);
-             
+                return Ok(result);
+
         }
         [HttpGet]
         public async Task<IActionResult>ViewTeamById(int teamId)
         {
-            try
-            {
+         
                 var teamLeadId = GetId();
                 var result = await _service.ViewMyOneTeamAsync(teamLeadId, teamId);
-                return Ok(result);
-            }
-            catch(KeyNotFoundException ex)
-            {
-                return NotFound(new { message = ex.Message });
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new { message = ex.Message });
-            }
-
+            return StatusCode(result.StatusCode, result);
         }
       
     }
