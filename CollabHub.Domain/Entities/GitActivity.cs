@@ -27,6 +27,11 @@ namespace CollabHub.Domain.Entities
         public DateTime CommittedAt { get; set; }
         public GitActivityStatus? Status { get; set; }
         public bool TriggeredNotification { get; set; } = false;
+        public int? PullRequestId { get; set; }
+        public string? PullRequestAction { get; set; } 
+        public string? SourceBranch { get; set; }
+        public string? TargetBranch { get; set; }
+
 
     }
 }

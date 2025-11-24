@@ -19,12 +19,14 @@ namespace CollabHub.Application.Services
     {
         private readonly IGenericRepository<Team> _repoTeam;
         private readonly IGenericRepository<TeamMember>_teamMember;
+        private readonly ITeamRepository _repo;
         private readonly IMapper _mapper;
-        public TeamLeadService(IGenericRepository<Team> repoTeam,IMapper mapper,IGenericRepository<TeamMember> teamMember)
+        public TeamLeadService(IGenericRepository<Team> repoTeam,IMapper mapper,IGenericRepository<TeamMember> teamMember, ITeamRepository repo)
         {
             _repoTeam= repoTeam;
             _mapper= mapper;
             _teamMember= teamMember;
+            _repo = repo;
         }
 
         public async Task<ApiResponse<TeamDTO>> CreateTeamAsync(CreateTeamDTO dto, int TeamLeadId) {
@@ -50,10 +52,10 @@ namespace CollabHub.Application.Services
 
             if (exists)
                 return ApiResponse<TeamDTO>.Fail(409, "Team name already exists", "DuplicateTeamName");
-            var inviteToken=Guid.NewGuid().ToString();
-            var inviteLink = $"https://collabHub.com/join-team/{inviteToken}";
+            var inviteToken = Guid.NewGuid();
+            //var inviteLink = $"https://collabHub.com/join-team/{inviteToken}";
             var team = _mapper.Map<Team>(dto);
-            team.InviteLink = inviteLink;
+            team.InviteToken = inviteToken;
 
             team.CreatedBy = TeamLeadId;
             team.IsActive = true;
@@ -61,6 +63,7 @@ namespace CollabHub.Application.Services
             await _repoTeam.SaveAsync();
 
             var teamdto = _mapper.Map<TeamDTO>(team);
+            teamdto.InviteLink = inviteToken;
             return ApiResponse<TeamDTO>.Success(
                 statusCode:201,
                 message:"Team Created succssfully",
@@ -72,9 +75,17 @@ namespace CollabHub.Application.Services
 
         public async Task<ApiResponse<object>> RemoveTeamAsync(int TeamID, int TeamLeadId)
         {
-            var team = await _repoTeam.GetByIdAsync(TeamID);
-            if (team == null) throw new KeyNotFoundException("Team is not found");
-            if (team.CreatedBy != TeamLeadId) throw new UnauthorizedAccessException("You are not authorized to remove this team");
+            var team = await _repo.GetByIdAsync(TeamID);
+            //var team = await _repoTeam.GetByIdAsync(TeamID);
+            if (team == null)
+                return ApiResponse<object>.Fail(404, "Team is not found", "NotFound");
+
+            if (team.CreatedBy != TeamLeadId) return ApiResponse<object>.Fail(403, "You are not authorized to remove this team", "Forbidden");
+
+            if (team.TaskHeads.Any(t => t.TaskDefinitions.Any(td => td.AssignedMemberId != null)))
+                return ApiResponse<object>.Fail(400,
+                    "You cannot remove the team.There are tasks assigned to members",
+                    "TaskAssigned");
 
             team.IsDeleted = true;
             team.IsActive = false;
@@ -85,21 +96,21 @@ namespace CollabHub.Application.Services
             await _repoTeam.SaveAsync();
 
             return ApiResponse<object>.Success(
-                statusCode : 204,
-                message:"Team deleted",
-                data:null);
-           
+                statusCode: 204,
+                message: "Team deleted",
+                data: null);
+
         }
 
-        public async Task<ApiResponse<bool>> ApproveMemberAsync(ApproveMemberDTO dto, int TeamLeadid)
+        public async Task<ApiResponse<bool>> ApproveOrRejectMemberAsync(ApproveRejectMemberDTO dto, int TeamLeadid)
         {
-            var member = await _teamMember.GetByIdAsync(dto.TeamMemberId);
+            var member = await _teamMember.GetByIdAsync(dto.MemberId);
             if (member == null || member.IsDeleted)
                 //throw new Exception("Member not found or already deleted");
                 return ApiResponse<bool>.Fail(
-                    statusCode:404,
-                    message:"Member not found",
-                    type:"NotFound");
+                    statusCode: 404,
+                    message: "Member not found",
+                    type: "NotFound");
 
             var team = await _repoTeam.GetByIdAsync(member.TeamId);
             if (team == null)
@@ -113,33 +124,105 @@ namespace CollabHub.Application.Services
             {
                 //throw new UnauthorizedAccessException("You are not authorized to get members for this team");
                 return ApiResponse<bool>.Fail(
-                    statusCode:403,
-                    message: "You are not authorized to approve members for this team",
-                    type:"Forbidden"
+                    statusCode: 403,
+                    message: "You are not authorized to approve pr reject members from this team",
+                    type: "Forbidden"
                     );
             }
 
-            var teamMembers=await _teamMember.GetByConditionAsync(t=>t.TeamId==team.TeamId);
-            var approvedCount = teamMembers.Count(a=>a.IsApproved);
-            if(approvedCount >= team.MemberLimit && dto.IsApproved)
-            {
-                //throw new InvalidOperationException("Member limit reached");
-                return ApiResponse<bool>.Fail(
-                    statusCode:409,
-                    message:"Member limit reached",
-                    type:"LimitExceed");
-            }
-           
+            //var teamMembers = await _teamMember.GetByConditionAsync(t => t.TeamId == team.TeamId);
+            //var approvedCount = teamMembers.Count(a=>a.IsApproved);
+            //if(approvedCount >= team.MemberLimit && dto.IsApproved)
+            //{
+            //    //throw new InvalidOperationException("Member limit reached");
+            //    return ApiResponse<bool>.Fail(
+            //        statusCode:409,
+            //        message:"Member limit reached",
+            //        type:"LimitExceed");
+            //}
 
-            member.IsApproved = true;
-            member.IsRejected = false;
+            if (dto.Action != MemberAction.Approve && dto.Action != MemberAction.Reject)
+                return ApiResponse<bool>.Fail(400, "Invalid action", "InvalidAction");
+
+            if (dto.Action == MemberAction.Approve && member.IsApproved)
+                return ApiResponse<bool>.Fail(409,"Member is already approved","AlreadyApproved");
+
+            if (dto.Action == MemberAction.Reject && member.IsRejected)
+                return ApiResponse<bool>.Fail(409, "Member is already rejected", "Alreadyrejected");
+
+            member.IsApproved=dto.Action == MemberAction.Approve;
+            member.IsRejected=dto.Action == MemberAction.Reject;
+
+            member.ModifiedBy = TeamLeadid;
+            member.ModifiedOn = DateTime.Now;
+
             await _teamMember.UpdateAsync(member);
             await _teamMember.SaveAsync();
+
+            //member.IsApproved = true;
+            //member.IsRejected = false;
+            //await _teamMember.UpdateAsync(member);
+            //await _teamMember.SaveAsync();
+
             return ApiResponse<bool>.Success(
-                statusCode:200,
-                message:"Member approved",
-                data:true);
+                statusCode: 200,
+                message: dto.Action == MemberAction.Approve ?"Member approved by leader" : "Member rejected by leader",
+                data: true);
         }
+
+        //public async Task<ApiResponse<bool>> RejectMemberAsync(ApproveRejectMemberDTO dto, int teamLeadId)
+        //{
+            
+        //    var team = await _repoTeam.GetByIdAsync(dto.teamId);
+        //    if (team == null)
+        //        return ApiResponse<bool>.Fail(
+        //          statusCode: 404,
+        //          message: "Team not found",
+        //          type: "NotFound");
+
+
+        //    if (team.CreatedBy != teamLeadId)
+        //        return ApiResponse<bool>.Fail(
+        //           statusCode: 403,
+        //           message: "You are not authorized to reject members for this team",
+        //           type: "Forbidden"
+        //           );
+
+
+        //    var teamMember = await _teamMember.GetOneAsync(m => m.TeamMemberId == dto.MemberId && m.TeamId == dto.teamId);
+        //    if (teamMember == null)
+        //        return ApiResponse<bool>.Fail(
+        //             statusCode: 404,
+        //             message: "Member not found",
+        //             type: "NotFound");
+        //    if (teamMember.IsApproved)
+        //        return ApiResponse<bool>.Fail(
+        //           statusCode: 409,
+        //           message: "This member has already been approved and cannot be rejected",
+        //           type: "AlreadyApproved"
+        //           );
+          
+        //    if (teamMember.IsRejected)
+        //        return ApiResponse<bool>.Fail(
+        //           statusCode: 400,
+        //           message: "This member has already rejected",
+        //           type: "AlreadyRejected"
+        //           );
+
+        //    teamMember.IsRejected = true;
+        //    teamMember.IsApproved = false;
+        //    teamMember.ModifiedOn = DateTime.Now;
+        //    teamMember.ModifiedBy = teamLeadId;
+
+        //    await _teamMember.UpdateAsync(teamMember);
+        //    await _teamMember.SaveAsync();
+
+        //    return ApiResponse<bool>.Success(
+        //           statusCode: 200,
+        //           message: "Rejected the member",
+        //          data:true
+        //           );
+        //}
 
         public async Task<ApiResponse<IEnumerable<TeamMemberDTO>>> GetTeamMembersAsync(TeamMemberFilterDTO dto, int teamLeadId)
         {
@@ -198,59 +281,7 @@ namespace CollabHub.Application.Services
                 data:members);
         }
 
-        public async Task<ApiResponse<bool>> RejectMemberAsync( RejectMemberDTO dto, int teamLeadId)
-        {
-            
-            var team = await _repoTeam.GetByIdAsync(dto.teamId);
-            if (team == null)
-                return ApiResponse<bool>.Fail(
-                  statusCode: 404,
-                  message: "Team not found",
-                  type: "NotFound");
-
-
-            if (team.CreatedBy != teamLeadId)
-                return ApiResponse<bool>.Fail(
-                   statusCode: 403,
-                   message: "You are not authorized to reject members for this team",
-                   type: "Forbidden"
-                   );
-
-
-            var teamMember = await _teamMember.GetOneAsync(m => m.TeamMemberId == dto.MemberId && m.TeamId == dto.teamId);
-            if (teamMember == null)
-                return ApiResponse<bool>.Fail(
-                     statusCode: 404,
-                     message: "Member not found",
-                     type: "NotFound");
-            if (teamMember.IsApproved)
-                return ApiResponse<bool>.Fail(
-                   statusCode: 409,
-                   message: "This member has already been approved and cannot be rejected",
-                   type: "AlreadyApproved"
-                   );
-          
-            if (teamMember.IsRejected)
-                return ApiResponse<bool>.Fail(
-                   statusCode: 400,
-                   message: "This member has already rejected",
-                   type: "AlreadyRejected"
-                   );
-
-            teamMember.IsRejected = true;
-            teamMember.IsApproved = false;
-            teamMember.ModifiedOn = DateTime.Now;
-            teamMember.ModifiedBy = teamLeadId;
-
-            await _teamMember.UpdateAsync(teamMember);
-            await _teamMember.SaveAsync();
-
-            return ApiResponse<bool>.Success(
-                   statusCode: 200,
-                   message: "Rejected the member",
-                  data:true
-                   );
-        }
+        
 
 
         public async Task<ApiResponse<bool>> RemoveMemberAsync(int TeamId,int MemberId, int TeamLeadid)
@@ -364,8 +395,8 @@ namespace CollabHub.Application.Services
                 TeamId = t.TeamId,
                 TeamName = t.TeamName,
                 Description=t.Description,
-                InviteLink=t.InviteLink,
-                MemberLimit=t.MemberLimit,
+                InviteLink =t.InviteToken,
+                MemberLimit =t.MemberLimit,
                 IsActive=t.IsActive,
                 Members = t.Members
                     .Where(m => m.IsApproved)
@@ -404,8 +435,8 @@ namespace CollabHub.Application.Services
                     TeamId = team.TeamId,
                     TeamName = team.TeamName,
                     Description=team.Description,
-                    InviteLink=team.InviteLink,
-                    MemberLimit=team.MemberLimit,
+                    InviteLink =team.InviteToken,
+                    MemberLimit =team.MemberLimit,
                     IsActive=team.IsActive,
                     //InviteLink=team.InviteLink,
                     Members = team.Members

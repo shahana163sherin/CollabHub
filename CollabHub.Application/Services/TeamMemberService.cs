@@ -46,63 +46,76 @@ namespace CollabHub.Application.Services
 
         public async Task<ApiResponse<JoinResponseDTO>> JoinTeamAsync(JoinRequestDTO dto, int memberId)
         {
+            var raw = dto.InviteCode?.Trim();
 
-                var team = await _teamRepo.GetOneAsync(t => t.InviteLink == dto.InviteCode);
-                if (team == null)
-                    return ApiResponse<JoinResponseDTO>.Success(statusCode: 200,
-                        message: "Join request sent for approval",
-                        data: null);
+            //var token=raw ?.Split('/').Last();
+            if (string.IsNullOrEmpty(raw))
+                return ApiResponse<JoinResponseDTO>.Fail(400, "Invalid invite code", "InvalidToken");
+            if (!Guid.TryParse(raw, out Guid InviteGuid))
+                return ApiResponse<JoinResponseDTO>.Fail(400, "Invalid inviteCode format", "InvalidToken");
+            var team = await _teamRepo.GetOneAsync(t => t.InviteToken == InviteGuid);
+            if (team == null)
+                return ApiResponse<JoinResponseDTO>.Fail(statusCode: 404,
+                    message: "Team not found",
+                    type: "NotFound");
 
 
-                var user = await _userRepo.GetByIdAsync(memberId);
-                if (user == null)
-                    return ApiResponse<JoinResponseDTO>.Fail(statusCode: 404,
-                        message: "User not found",
-                        type:"NotFound"
-                  );
-             
-                var alreadyMember = await _teamMemberRepo.GetOneAsync(m => m.TeamId == team.TeamId && m.UserId == memberId && !m.IsDeleted && !m.IsRejected);
-                if (alreadyMember != null)
+            var user = await _userRepo.GetByIdAsync(memberId);
+            if (user == null)
+                return ApiResponse<JoinResponseDTO>.Fail(statusCode: 404,
+                    message: "User not found",
+                    type: "NotFound"
+              );
+
+            var member = await _teamMemberRepo.GetByConditionAsync(m => m.TeamId == team.TeamId && !m.IsRejected);
+            var currentCount = member.Count();
+            if (currentCount >= team.MemberLimit)
+            {
+                return ApiResponse<JoinResponseDTO>.Fail(400, "Member limit exceeded", "LimitExceed");
+            }
+
+            var alreadyMember = await _teamMemberRepo.GetOneAsync(m => m.TeamId == team.TeamId && m.UserId == memberId && !m.IsDeleted && !m.IsRejected);
+            if (alreadyMember != null)
+            {
+                if (alreadyMember.IsDeleted || alreadyMember.IsRejected)
                 {
-                    if(alreadyMember.IsDeleted || alreadyMember.IsRejected)
-                    {
-                        alreadyMember.IsRejected = false;
-                        alreadyMember.IsDeleted= false;
-                        alreadyMember.DeletedOn = null;
-                        alreadyMember.DeletedBy= null;
+                    alreadyMember.IsRejected = false;
+                    alreadyMember.IsDeleted = false;
+                    alreadyMember.DeletedOn = null;
+                    alreadyMember.DeletedBy = null;
 
-                        await _teamMemberRepo.UpdateAsync(alreadyMember);
-                        await _teamMemberRepo.SaveAsync();
+                    await _teamMemberRepo.UpdateAsync(alreadyMember);
+                    await _teamMemberRepo.SaveAsync();
 
-                        var result = _mapper.Map<JoinResponseDTO>(alreadyMember);
-                        return ApiResponse<JoinResponseDTO>.Success(statusCode:200,
-                            message:"Rejoined team successfully",
-                            data:result);
-                      
-                    }
-                    return ApiResponse<JoinResponseDTO>.Fail(
-                        statusCode:409,
-                        message: "User already part of this team",
-                        type:"AlreadyPart");
-                  
+                    var result = _mapper.Map<JoinResponseDTO>(alreadyMember);
+                    return ApiResponse<JoinResponseDTO>.Success(statusCode: 200,
+                        message: "Rejoined team successfully",
+                        data: result);
+
                 }
+                return ApiResponse<JoinResponseDTO>.Fail(
+                    statusCode: 409,
+                    message: "User already part of this team",
+                    type: "AlreadyPart");
+
+            }
 
 
-              
-                var teamMember = _mapper.Map<TeamMember>(dto);
-                teamMember.TeamId = team.TeamId;
-                teamMember.UserId = memberId;
 
-                await _teamMemberRepo.AddAsync(teamMember);
-                await _teamMemberRepo.SaveAsync();
+            var teamMember = _mapper.Map<TeamMember>(dto);
+            teamMember.TeamId = team.TeamId;
+            teamMember.UserId = memberId;
 
-                
-                var response = _mapper.Map<JoinResponseDTO>(teamMember);
-               
+            await _teamMemberRepo.AddAsync(teamMember);
+            await _teamMemberRepo.SaveAsync();
 
-                
-              
-                 return ApiResponse<JoinResponseDTO>.Success(statusCode: 200,
+
+            var response = _mapper.Map<JoinResponseDTO>(teamMember);
+
+
+
+
+            return ApiResponse<JoinResponseDTO>.Success(statusCode: 200,
                         message: "Join request sent for approval",
                         data: null);
             
@@ -111,7 +124,7 @@ namespace CollabHub.Application.Services
 
         public async Task<ApiResponse<string>> LeaveTeamAsync(int userId)
         {
-            var member = await _teamMemberRepo.GetOneAsync(m => m.UserId == userId && !m.IsDeleted && !m.IsRejected);
+            var member = await _teamMemberRepo.GetOneAsync(m => m.UserId == userId && !m.IsDeleted && !m.IsRejected && m.IsApproved);
             if (member == null)
             {
                 return ApiResponse<string>.Fail(
@@ -152,6 +165,10 @@ namespace CollabHub.Application.Services
             {
                 TeamId = t.TeamId,
                 TeamName = t.TeamName,
+                Description=t.Description,
+                InviteLink=t.InviteToken,
+                MemberLimit=t.MemberLimit,
+                IsActive=t.IsActive,
                 Members = t.Members
                     .Where(m => m.IsApproved)
                     .Select(m => new TeamMemberDTO
@@ -200,6 +217,10 @@ namespace CollabHub.Application.Services
                 {
                     TeamId = team.TeamId,
                     TeamName = team.TeamName,
+                    Description = team.Description,
+                    InviteLink = team.InviteToken,
+                    MemberLimit = team.MemberLimit,
+                    IsActive = team.IsActive,
                     Members = team.Members
                     .Where(m => m.IsApproved)
                     .Select(m => new TeamMemberDTO

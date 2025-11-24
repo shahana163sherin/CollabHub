@@ -4,6 +4,7 @@ using CollabHub.Infrastructure.Persistence.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
 using Microsoft.EntityFrameworkCore.Metadata;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 
 #nullable disable
@@ -11,9 +12,11 @@ using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 namespace CollabHub.Infrastructure.Migrations
 {
     [DbContext(typeof(ApplicationDbContext))]
-    partial class ApplicationDbContextModelSnapshot : ModelSnapshot
+    [Migration("20251120083704_TeamInviteLink")]
+    partial class TeamInviteLink
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -426,7 +429,7 @@ namespace CollabHub.Infrastructure.Migrations
 
                     b.Property<string>("CommitHash")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<string>("CommitMessage")
                         .HasColumnType("nvarchar(max)");
@@ -455,22 +458,10 @@ namespace CollabHub.Infrastructure.Migrations
                     b.Property<DateTime?>("ModifiedOn")
                         .HasColumnType("datetime2");
 
-                    b.Property<string>("PullRequestAction")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<int?>("PullRequestId")
-                        .HasColumnType("int");
-
                     b.Property<int>("RepositoryId")
                         .HasColumnType("int");
 
-                    b.Property<string>("SourceBranch")
-                        .HasColumnType("nvarchar(max)");
-
                     b.Property<string>("Status")
-                        .HasColumnType("nvarchar(max)");
-
-                    b.Property<string>("TargetBranch")
                         .HasColumnType("nvarchar(max)");
 
                     b.Property<int?>("TaskDefinitionId")
@@ -483,8 +474,6 @@ namespace CollabHub.Infrastructure.Migrations
                         .HasColumnType("int");
 
                     b.HasKey("GitActivityId");
-
-                    b.HasIndex("CommitHash");
 
                     b.HasIndex("CreatedBy");
 
@@ -556,7 +545,7 @@ namespace CollabHub.Infrastructure.Migrations
 
                     b.Property<string>("RepoUrl")
                         .IsRequired()
-                        .HasColumnType("nvarchar(450)");
+                        .HasColumnType("nvarchar(max)");
 
                     b.Property<int>("TaskHeadId")
                         .HasColumnType("int");
@@ -571,9 +560,6 @@ namespace CollabHub.Infrastructure.Migrations
                     b.HasIndex("DeletedBy");
 
                     b.HasIndex("ModifiedBy");
-
-                    b.HasIndex("RepoUrl")
-                        .IsUnique();
 
                     b.HasIndex("TaskHeadId");
 

@@ -19,14 +19,20 @@ namespace CollabHub.Application.Services
         private readonly IGenericRepository<TaskHead> _taskHead;
         private readonly IGenericRepository<Team> _team;
         private readonly ITaskHeadRepository _taskHeadRepository;
+        //private readonly IGenericRepository<TaskDefinition> _def;
         private readonly IMapper _mapper;
 
-        public TaskHeadService(IGenericRepository<TaskHead> taskHead, IGenericRepository<Team> team, IMapper mapper, ITaskHeadRepository taskHeadRepository)
+        public TaskHeadService(IGenericRepository<TaskHead> taskHead,
+            IGenericRepository<Team> team,
+            IMapper mapper,
+            //IGenericRepository<TaskDefinition> def,
+            ITaskHeadRepository taskHeadRepository)
         {
             _taskHead = taskHead;
             _team = team;
             _mapper = mapper;
             _taskHeadRepository = taskHeadRepository;
+            //_def = def;
         }
 
         public async Task<ApiResponse<TaskHeadDTO>> CreateTaskAsync(CreateTaskHeadDTO dto, int teamLeadId)
@@ -102,6 +108,14 @@ namespace CollabHub.Application.Services
                     statusCode:403,
                     message:"You are not authorized to delete this task",
                     type:"Forbidden");
+            var task = await _taskHeadRepository.GetByIdTaskAsync(taskHeadId);
+            if(task.TaskDefinitions.Any(td=>td.AssignedMemberId.HasValue))
+                return ApiResponse<bool>.Fail(400, "Cannot delete. This task is already assigned to a user.",
+                 "AlreadyAssigned");
+
+            if (taskHead.TaskDefinitions.Any(td=>td.AssignedMemberId.HasValue))
+                return ApiResponse<bool>.Fail(400, "Cannot delete. This task is already assigned to a user.",
+                    "AlreadyAssigned");
 
             taskHead.DeletedBy = teamLeadId;
             taskHead.DeletedOn = DateTime.Now;
@@ -110,6 +124,7 @@ namespace CollabHub.Application.Services
             await _taskHead.SaveAsync();
             return ApiResponse<bool>.Success(
                 statusCode:200,
+                message:"Task deleted",
                 data:true);
         }
 
@@ -145,12 +160,20 @@ namespace CollabHub.Application.Services
         public async Task<ApiResponse<IEnumerable<TaskHeadDTO>>> GetAllTaskAsync(TaskHeadFilterDTO dto, int teamLeadId)
         {
             var taskHeads = await _taskHeadRepository.GetTaskHeadsAsync();
+          
 
             var query = taskHeads
                 .Where(th => th.Team.CreatedBy == teamLeadId && !th.IsDeleted);
             if (dto.TeamId > 0)
+            {
+                var team = await _team.GetByIdAsync(dto.TeamId);
+                if (team == null) return ApiResponse<IEnumerable<TaskHeadDTO>>.Fail(404,"Team not found","NotFound");
+                if (team.CreatedBy != teamLeadId) return ApiResponse<IEnumerable<TaskHeadDTO>>.Fail(403,"You are not authorized","Forbidden");
+
                 query = query.Where(th => th.TeamId == dto.TeamId);
-            if(!string.IsNullOrEmpty(dto.Title))
+
+            }
+            if (!string.IsNullOrEmpty(dto.Title))
                 query=query.Where(th => th.Title.ToLower().Contains(dto.Title.ToLower()));
             if(dto.Status.HasValue)
                 query=query.Where(th => th.Status == dto.Status.Value);

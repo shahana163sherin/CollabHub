@@ -10,8 +10,10 @@ namespace CollabHub.Domain.Enum
     {
         Pending=1,
         InProgress=2,
-        Completed=3,
-        Reassigned=4,
-        Cancelled=5
+        InReview=3,
+        Approved=4,
+        Completed=5,
+        Reassigned=6,
+        Cancelled=7
     }
 }

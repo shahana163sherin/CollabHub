@@ -62,22 +62,22 @@ namespace CollabHub.WebAPI.Controllers.TeamLead
             return Ok(response);
         }
 
-        [HttpPost]
-        public async Task<IActionResult> ApproveMember([FromBody]ApproveMemberDTO dto)
-        {
-            var TeamLeadId=GetId();
-            var result = await _service.ApproveMemberAsync(dto, TeamLeadId);
-            return StatusCode(result.StatusCode, result);
-
-        }
-
         [HttpPut]
-        public async Task<IActionResult> RejectMember([FromBody]RejectMemberDTO dto)
+        public async Task<IActionResult> ApproveOrRejectMember([FromBody] ApproveRejectMemberDTO dto)
         {
             var TeamLeadId=GetId();
-            var result = await _service.RejectMemberAsync(dto, TeamLeadId);
+            var result = await _service.ApproveOrRejectMemberAsync(dto, TeamLeadId);
             return StatusCode(result.StatusCode, result);
+
         }
+
+        //[HttpPut]
+        //public async Task<IActionResult> RejectMember([FromBody]RejectMemberDTO dto)
+        //{
+        //    var TeamLeadId=GetId();
+        //    var result = await _service.RejectMemberAsync(dto, TeamLeadId);
+        //    return StatusCode(result.StatusCode, result);
+        //}
 
         [HttpGet]
         public async Task <IActionResult>GetTeamMembers([FromQuery]TeamMemberFilterDTO dto)

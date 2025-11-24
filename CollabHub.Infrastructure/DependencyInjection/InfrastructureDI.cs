@@ -1,4 +1,5 @@
 ﻿using CollabHub.Application.Interfaces.Auth;
+using CollabHub.Application.Interfaces.TeamLead;
 using CollabHub.Infrastructure.Repositories;
 using CollabHub.Infrastructure.Repositories.EF;
 using CollabHub.Infrastructure.Security;
@@ -19,6 +20,7 @@ namespace CollabHub.Infrastructure.DependencyInjection
             services.AddScoped<IHashPassword, PasswordHasher>();
             services.AddScoped<ITokenService, TokenService>();
             services.AddScoped<ITaskHeadRepository, TaskHeadRepository>();
+            services.AddScoped<ITeamRepository, TeamRepository>();
             return services;
         }
     }

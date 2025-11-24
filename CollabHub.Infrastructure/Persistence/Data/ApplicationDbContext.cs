@@ -222,6 +222,15 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 .Property(ga => ga.Status)
                 .HasConversion<string>();
 
+            modelBuilder.Entity<GitRepository>()
+                .HasIndex(gr => gr.RepoUrl)
+                .IsUnique();
+            modelBuilder.Entity<GitActivity>()
+                .HasIndex(ga => ga.CommitHash);
+
+            modelBuilder.Entity<GitActivity>()
+                .HasIndex(a => a.RepositoryId);
+
             modelBuilder.Entity<FileResource>()
                 .HasOne(f => f.ReferenceUser)
                 .WithMany(u => u.UploadedFiles)

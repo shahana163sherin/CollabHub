@@ -18,8 +18,8 @@ namespace CollabHub.Application.Interfaces.TeamLead
         Task<ApiResponse<TeamDTO>> ViewMyOneTeamAsync(int teamLeadId, int teamId);
 
 
-        Task<ApiResponse<bool>> ApproveMemberAsync(ApproveMemberDTO dto,int TeamLeadid);
-        Task<ApiResponse<bool>> RejectMemberAsync(RejectMemberDTO dto, int TeamLeadid);
+        Task<ApiResponse<bool>> ApproveOrRejectMemberAsync(ApproveRejectMemberDTO dto,int TeamLeadid);
+        //Task<ApiResponse<bool>> RejectMemberAsync(RejectMemberDTO dto, int TeamLeadid);
         Task<ApiResponse<bool>> RemoveMemberAsync(int TeamId, int MemberId, int TeamLeadid);
         Task<ApiResponse<IEnumerable<TeamMemberDTO>>> GetTeamMembersAsync(TeamMemberFilterDTO dto,int teamLeadId);
 

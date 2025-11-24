@@ -15,9 +15,10 @@ namespace CollabHub.Domain.Entities
         public string TeamName { get; set; }
         public string? Description { get; set; }
         public bool IsActive { get; set; } = true;
-        public string? InviteLink { get; set; }
+        //public string? InviteLink { get; set; }
         [Required]
         public int MemberLimit { get; set; } = 4;
+        public Guid? InviteToken { get; set; } = Guid.NewGuid();
         
         public ICollection<TeamMember> Members { get; set; } = new List<TeamMember>();
         public ICollection<TaskHead> TaskHeads { get; set; } = new List<TaskHead>();

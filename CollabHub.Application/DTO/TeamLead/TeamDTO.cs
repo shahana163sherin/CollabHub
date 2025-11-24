@@ -12,7 +12,7 @@ namespace CollabHub.Application.DTO.TeamLead
         public string TeamName { get; set; }
         public string? Description { get; set; }
         public bool IsActive { get; set; }
-        public string? InviteLink { get; set; }
+        public Guid? InviteLink { get; set; }
         public int MemberLimit { get; set; }
         public List<TeamMemberDTO> Members { get; set; } = new List<TeamMemberDTO>();
     }

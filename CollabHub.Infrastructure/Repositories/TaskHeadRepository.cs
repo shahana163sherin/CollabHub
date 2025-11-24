@@ -24,6 +24,13 @@ namespace CollabHub.Infrastructure.Repositories
                 .Include(th => th.TaskDefinitions)
                 .ToListAsync();
         }
+
+        public async Task<TaskHead>GetByIdTaskAsync(int id)
+        {
+            return await _context.TaskHeads.Include(th => th.Team)
+                .Include(th => th.TaskDefinitions)
+                .FirstOrDefaultAsync(th=>th.TaskHeadId == id);
+        }
     }
 
 }
