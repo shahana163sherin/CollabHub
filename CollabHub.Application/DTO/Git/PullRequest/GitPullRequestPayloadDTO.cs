@@ -9,9 +9,10 @@ namespace CollabHub.Application.DTO.Git.PullRequest
 {
     public class GitPullRequestPayloadDTO
     {
-        public PullRequestAction action { get; set; }
+        public string action { get; set; }
+        public int Number { get; set; }
         public RepositoryInfoDTO repository { get; set; }
-        public PullRequestInfo pullRequset { get; set; }
+        public PullRequestInfo pullRequest { get; set; }
         public SenderInfo sender { get; set; }
     }
 }

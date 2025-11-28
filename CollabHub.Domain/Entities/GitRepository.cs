@@ -14,13 +14,13 @@ namespace CollabHub.Domain.Entities
         public int RepositoryId { get; set; }
         public int UserId { get; set; }
         public User User { get; set; }
-        public int TaskHeadId { get; set; }
-        public TaskHead TaskHead { get; set; }
+        //public int TaskHeadId { get; set; }
+        //public TaskHead TaskHead { get; set; }
         [Required]
         public string RepoName { get; set; }
         [Required]
         public string RepoUrl { get; set; }
-        public string BranchName { get; set; }="main";
+        public string DefaultBranch { get; set; }="main";
         public bool IsPrivate { get; set; } = false;
         public string? Description { get; set; }
         public string? LastCommitId { get; set; }

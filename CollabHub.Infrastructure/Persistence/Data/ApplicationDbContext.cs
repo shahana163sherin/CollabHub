@@ -194,11 +194,11 @@ namespace CollabHub.Infrastructure.Persistence.Data
                 .HasForeignKey(gr=>gr.UserId)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<GitRepository>()
-                .HasOne(gr=>gr.TaskHead)
-                .WithMany(th=>th.GitRepositories)
-                .HasForeignKey(gr=>gr.TaskHeadId)
-                .OnDelete(DeleteBehavior.NoAction);
+            //modelBuilder.Entity<GitRepository>()
+            //    .HasOne(gr=>gr.TaskHead)
+            //    .WithMany(th=>th.GitRepositories)
+            //    .HasForeignKey(gr=>gr.TaskHeadId)
+            //    .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<GitActivity>()
                 .HasOne(ga => ga.User)
@@ -230,6 +230,10 @@ namespace CollabHub.Infrastructure.Persistence.Data
 
             modelBuilder.Entity<GitActivity>()
                 .HasIndex(a => a.RepositoryId);
+
+            modelBuilder.Entity<GitActivity>()
+                .Property(ga=>ga.EventType)
+                .HasConversion<string>();
 
             modelBuilder.Entity<FileResource>()
                 .HasOne(f => f.ReferenceUser)

@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace CollabHub.Domain.Enum
 {
-    public enum PullRequestAction
+    public enum GitEventType
     {
-        opened = 1,
-        closed = 2,
-        merged = 3,
-        reopened = 4
+        Commit = 1,
+        Push = 2,
+        PullRequest = 3,
+        Merge = 4
     }
+
 }

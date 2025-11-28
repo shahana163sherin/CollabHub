@@ -11,6 +11,7 @@ namespace CollabHub.Application.DTO.Git.PushRequest
         public string Id { get; set; }
         public string Message { get; set; }
         public DateTime TimeStamp { get; set; }
+        public string Url { get; set; }
 
     }
 }

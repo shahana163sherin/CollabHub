@@ -26,7 +26,7 @@ namespace CollabHub.Domain.Entities
         public DateTime DueDate { get; set; }
         public DateTime? ExtendedTo { get; set; }
         public ICollection<TaskDefinition> TaskDefinitions { get; set; }=new List<TaskDefinition>();
-        public ICollection<GitRepository> GitRepositories { get; set; }=new List<GitRepository>();
+        //public ICollection<GitRepository> GitRepositories { get; set; }=new List<GitRepository>();
 
 
     }

@@ -25,12 +25,16 @@ namespace CollabHub.Domain.Entities
         public string? CommitMessage { get; set; }
         public string BranchName { get; set; }
         public DateTime CommittedAt { get; set; }
+        public GitEventType EventType { get; set; }
         public GitActivityStatus? Status { get; set; }
         public bool TriggeredNotification { get; set; } = false;
         public int? PullRequestId { get; set; }
-        public string? PullRequestAction { get; set; } 
-        public string? SourceBranch { get; set; }
-        public string? TargetBranch { get; set; }
+        public string? PullRequestUrl { get; set; }
+        public string? PullRequestAction { get; set; }
+        public string? DetectedTaskCode { get; set; } 
+        public bool TaskIdExtracted { get; set; } = false;
+        //public string? SourceBranch { get; set; }
+        //public string? TargetBranch { get; set; }
 
 
     }

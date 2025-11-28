@@ -1,4 +1,5 @@
 ﻿using CollabHub.Application.DTO;
+using CollabHub.Application.DTO.Git.Commit;
 using CollabHub.Application.DTO.Git.PullRequest;
 using CollabHub.Application.DTO.Git.PushRequest;
 using CollabHub.Domain.Entities;
@@ -8,17 +9,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CollabHub.Application.Interfaces
+namespace CollabHub.Application.Interfaces.Git
 {
-    public interface IGitActivityService
+    public interface IGitService
     {
         Task<ApiResponse<object>> ProcessPushEventAsync(GitPushPayloadDTO payload);
         Task<ApiResponse<object>> ProcessPullRequestEventAsync(GitPullRequestPayloadDTO dto);
-        //Task<GitActivity> GetActivityByCommitHashAsync(string commitHash);
-        //Task<GitRepository> GetRepositoryByUrlAsync(string url);
-       
-
-
-        //Task UpdateTaskStatusAsync(int taskId, TaskStatus status);
+        Task<ApiResponse<object>> ProcessCommitWebHookAsync(CommitWebhookPayload commit);
     }
 }

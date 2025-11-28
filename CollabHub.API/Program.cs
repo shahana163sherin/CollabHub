@@ -99,6 +99,19 @@ namespace CollabHub.API
             });
             builder.Services.AddAuthorization();
 
+            const string CorsPolicy= "AllowReact";
+            builder.Services.AddCors(options =>
+            {
+                options.AddPolicy(CorsPolicy, policy =>
+                {
+                    policy.WithOrigins("http://localhost:5173")
+                    .AllowAnyHeader()
+                    .AllowAnyMethod()
+                    .AllowCredentials();
+
+                });
+            });
+
 
             builder.Services.AddInfrastructure();
             builder.Services.AddApplicationService();
@@ -148,11 +161,12 @@ namespace CollabHub.API
             }
             app.UseMiddleware<GlobalExceptionMiddleware>();
             app.UseHttpsRedirection();
-            app.UseAuthentication();
+            app.UseCors(CorsPolicy);
+          app.UseAuthentication();
 
             app.UseAuthorization();
 
-
+          
             app.MapControllers();
 
             app.Run();

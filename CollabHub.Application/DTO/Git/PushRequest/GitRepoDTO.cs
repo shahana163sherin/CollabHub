@@ -8,7 +8,7 @@ namespace CollabHub.Application.DTO.Git.PushRequest
 {
     public class GitRepoDTO
     {
-        public string Name { get;set; }
+        public string Full_Name { get;set; }
         public string HtmlUrl { get; set; }
 
     }

@@ -15,5 +15,6 @@ namespace CollabHub.Application.DTO.Git.PullRequest
         public DateTime? Merged_At { get; set; }
         public BranchInfo Head { get; set; }
         public BranchInfo Base { get; set; }
+        public string Html_Url { get; set; }
     }
 }

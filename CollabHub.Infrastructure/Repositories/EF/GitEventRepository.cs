@@ -4,10 +4,9 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace CollabHub.Application.DTO.Git.PullRequest
+namespace CollabHub.Infrastructure.Repositories.EF
 {
-    public class SenderInfo
+    internal class GitEventRepository
     {
-        public string Login { get; set; }
     }
 }

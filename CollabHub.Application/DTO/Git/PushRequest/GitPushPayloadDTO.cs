@@ -10,7 +10,9 @@ namespace CollabHub.Application.DTO.Git.PushRequest
     {
         public GitRepoDTO Repository { get; set; }
         public string Ref { get; set; }
-        public GitCommitDTO HeadCommit { get; set; }
+        public string Before {  get; set; }
+        public string after { get; set; }
+        public List<GitCommitDTO> HeadCommit { get; set; }
         public GitPusherDTO Pusher { get; set; }
     }
 }

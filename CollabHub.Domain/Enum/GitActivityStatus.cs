@@ -11,11 +11,11 @@ namespace CollabHub.Domain.Enum
             Committed=1,
             Pushed=2,
             PullRequested=3,
-            Reviewed=4,
-            Merged=5,
-            Deployed=6,
-            Failed=7,
-            Closed=8
+          
+            Merged=4,
+           
+            Failed=5,
+            Closed=6
 
     }
 }
