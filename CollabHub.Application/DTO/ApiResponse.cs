@@ -8,7 +8,7 @@ namespace CollabHub.Application.DTO
 {
     public class ApiResponse<T>
     {
-        //public bool Success { get; set; }
+        public bool IsSuccess { get; set; }
         public string Message { get; set; }
         public int StatusCode { get; set; }
         public T? Data { get; set; }
@@ -18,6 +18,7 @@ namespace CollabHub.Application.DTO
         {
             return new ApiResponse<T>
             {
+                IsSuccess = true,
                 StatusCode = statusCode,
                 Message = message,
                 Data = data,
@@ -29,6 +30,7 @@ namespace CollabHub.Application.DTO
         {
             return new ApiResponse<T>
             {
+                IsSuccess = false,
                 StatusCode = statusCode,
                 Message = message,
                 Data = default,

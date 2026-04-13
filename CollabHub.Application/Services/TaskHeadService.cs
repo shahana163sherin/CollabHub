@@ -51,8 +51,20 @@ namespace CollabHub.Application.Services
                     statusCode:403,
                     message: "You are not authorized to create the task",
                     type:"Forbidden");
-               
-                var taskHead = _mapper.Map<TaskHead>(dto);
+
+            if (dto.DueDate < dto.StartDate)
+                return ApiResponse<TaskHeadDTO>.Fail(
+                    statusCode: 400,
+                    message: "Due date cannot be before start date.",
+                    type: "InvalidDateRange");
+
+            if (dto.ExpectedEndDate > dto.DueDate)
+                return ApiResponse<TaskHeadDTO>.Fail(
+                    statusCode: 400,
+                    message: "Expected end date cannot be after due date.",
+                    type: "InvalidDate");
+
+            var taskHead = _mapper.Map<TaskHead>(dto);
                 taskHead.CreatedBy = teamLeadId;
                 taskHead.CreatedOn=DateTime.Now;
                 taskHead.Status = Domain.Enum.TaskStatus.Pending;
@@ -61,17 +73,17 @@ namespace CollabHub.Application.Services
 
 
 
-                if (dto.DueDate < taskHead.StartDate)
-                    return ApiResponse<TaskHeadDTO>.Fail(
-                        statusCode:400,
-                        message: "Due date cannot be before start date.",
-                        type:"InvalidDateRange");
+                //if (dto.DueDate < taskHead.StartDate)
+                //    return ApiResponse<TaskHeadDTO>.Fail(
+                //        statusCode:400,
+                //        message: "Due date cannot be before start date.",
+                //        type:"InvalidDateRange");
 
-                if (dto.ExpectedEndDate > dto.DueDate)
-                    return ApiResponse<TaskHeadDTO>.Fail(
-                        statusCode:400,
-                        message: "Expected end date cannot be after due date.",
-                        type:"InvalidDate");
+                //if (dto.ExpectedEndDate > dto.DueDate)
+                //    return ApiResponse<TaskHeadDTO>.Fail(
+                //        statusCode:400,
+                //        message: "Expected end date cannot be after due date.",
+                //        type:"InvalidDate");
 
                 await _taskHead.AddAsync(taskHead);
                 await _taskHead.SaveAsync();

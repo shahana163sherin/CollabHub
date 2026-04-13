@@ -74,7 +74,7 @@ namespace CollabHub.Application.Services
             dto.Email = dto.Email.Trim().ToLower();
             dto.Name=dto.Name.Trim();
 
-            var existing = await _repo.GetOneAsync(u => u.Email == dto.Email);
+            var existing = await _repo.GetOneAsync(u => u.Email == dto.Email && u.IsActive && u.Role==UserRole.Member);
             if (string.IsNullOrWhiteSpace(dto.Name) ||
                 string.IsNullOrWhiteSpace(dto.Email) ||
                 string.IsNullOrWhiteSpace(dto.Password))
@@ -133,7 +133,7 @@ namespace CollabHub.Application.Services
         {
             dto.Email = dto.Email.Trim().ToLower();
             dto.Name=dto.Name.Trim();
-            var existing = await _repo.GetOneAsync(u => u.Email == dto.Email);
+            var existing = await _repo.GetOneAsync(u => u.Email == dto.Email && u.IsActive && u.Role==UserRole.TeamLead);
             if (string.IsNullOrWhiteSpace(dto.Name) ||
                 string.IsNullOrWhiteSpace(dto.Email) ||
                 string.IsNullOrWhiteSpace(dto.Password)||
@@ -202,7 +202,7 @@ namespace CollabHub.Application.Services
             {
                 return ApiResponse<AuthResponseDTO>.Fail(
                     statusCode: 400,
-                    message: "Invalid Email",
+                    message: "Invalid email or password",
                     type: "InvalidEmail",
                     details: "The email you entered does not match our records");
             }
@@ -211,7 +211,7 @@ namespace CollabHub.Application.Services
             {
                 return ApiResponse<AuthResponseDTO>.Fail(
                     statusCode:400,
-                    message:"Invalid password",
+                    message: "Invalid email or password",
                     type:"InvalidPassword",
                     details: "The password you entered does not match our records");
                
@@ -409,7 +409,7 @@ namespace CollabHub.Application.Services
 
             return ApiResponse<string>.Success(statusCode: 200,
                 message:"Token set completed",
-                data: null);
+                data: rawToken);
            
         }
 

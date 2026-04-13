@@ -40,6 +40,7 @@ namespace CollabHub.Infrastructure.Persistence.Data
         public DbSet<ReportUser> ReportUsers { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<PasswordResetToken> PasswordResetTokens { get; set; }
+        
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);

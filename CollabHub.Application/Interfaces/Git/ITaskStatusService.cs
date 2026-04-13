@@ -9,9 +9,8 @@ namespace CollabHub.Application.Interfaces.Git
 {
     public interface ITaskStatusService
     {
-
         Task UpdateSubTasksFromActivityAsync(int taskDefinitionId, GitActivity activity);
-        Task UpdateMainTaskIfCompleted(int tskHeadId);
+        Task UpdateMainTaskIfCompleted(int taskHeadId);
         Task<bool> AreAllSubCompleteAsync(int taskHeadId);
     }
 }
