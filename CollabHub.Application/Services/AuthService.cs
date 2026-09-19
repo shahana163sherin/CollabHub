@@ -106,7 +106,10 @@ namespace CollabHub.Application.Services
                 Email = dto.Email,
                 Password = hashedPassword,
                 Role = UserRole.Member,
+                
             };
+
+            
             await _repo.AddAsync(user);
             await _repo.SaveAsync();
 
@@ -117,8 +120,8 @@ namespace CollabHub.Application.Services
                 fileResource.ReferenceUser = user; 
                 user.UploadedFiles.Add(fileResource);
             }
+            user.CreatedBy = user.UserId;
 
-           
             await _repo.UpdateAsync(user);
             await _repo.SaveAsync();
 
@@ -168,14 +171,14 @@ namespace CollabHub.Application.Services
                 Email = dto.Email,
                 Password = hashedPassword,
                 Role = UserRole.TeamLead,
-               
+              
                 Qualification = dto.Qualification
             };
             await _repo.AddAsync(user);
             await _repo.SaveAsync();
             var  fileResource = await ProcessFileAsync(dto.ProfileImg, FileContextType.ProfileImage,user.UserId);
 
-
+            user.CreatedBy = user.UserId;
             if (fileResource != null)
             {
                 fileResource.ReferenceUser = user; 
@@ -372,6 +375,9 @@ namespace CollabHub.Application.Services
                 details: "The provided reset token is invalid");
 
             user.Password = _hash.HashPassword(dto.NewPassword);
+            user.LastPasswordChangedAt= DateTime.UtcNow;
+            user.ModifiedBy = user.UserId;
+            user.ModifiedOn = DateTime.UtcNow;
             await _repo.UpdateAsync(user);
 
             tokenEntity.IsUsed = true;
