@@ -88,7 +88,7 @@ namespace CollabHub.API
                         var userTicks = (user.LastPasswordChangedAt ?? DateTime.MinValue).Ticks;
                         if (userTicks > tokenTicks)
                         {
-                            context.Fail("Password chnaged");
+                            context.Fail("Password changed");
                             return;
                         }
                         
